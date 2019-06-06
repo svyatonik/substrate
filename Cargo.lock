@@ -4035,6 +4035,7 @@ dependencies = [
  "substrate-telemetry 2.0.0",
  "substrate-test-client 2.0.0",
  "substrate-trie 2.0.0",
+ "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

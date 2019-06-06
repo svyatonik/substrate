@@ -901,10 +901,12 @@ impl<B, E, Block, RA> Client<B, E, Block, RA> where
 		}
 
 		// FIXME #1232: correct path logic for when to execute this function
-		let begin = ::std::time::Instant::now();
+		let begin = ::time::precise_time_s();
 		let (storage_update,changes_update,storage_changes) = self.block_execution(&operation.op, &import_headers, origin, hash, body.clone())?;
-		let end = ::std::time::Instant::now();
-		println!("=== BLOCK#{}: {}", number, (end - begin).as_nanos());
+		let end = ::time::precise_time_s();
+		if origin != BlockOrigin::Own {
+			println!("=== BLOCK#{}: {}", number, end - begin);
+		}
 
 		let is_new_best = finalized || match fork_choice {
 			ForkChoiceStrategy::LongestChain => import_headers.post().number() > &last_best_number,
