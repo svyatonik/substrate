@@ -20,11 +20,12 @@ use primitives::{ed25519::Public as AuthorityId, ed25519, sr25519, Pair, crypto:
 use node_primitives::AccountId;
 use node_runtime::{ConsensusConfig, CouncilSeatsConfig, CouncilVotingConfig, DemocracyConfig,
 	SessionConfig, StakingConfig, StakerStatus, TimestampConfig, BalancesConfig, TreasuryConfig,
-	SudoConfig, ContractConfig, GrandpaConfig, IndicesConfig, Permill, Perbill};
+	SudoConfig, ContractConfig, GrandpaConfig, IndicesConfig, Permill, Perbill, SystemConfig};
 pub use node_runtime::GenesisConfig;
 use substrate_service;
 use hex_literal::hex;
 use substrate_telemetry::TelemetryEndpoints;
+use primitives::ChangesTrieConfiguration;
 
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -266,7 +267,17 @@ pub fn testnet_genesis(
 			code: include_bytes!("../../runtime/wasm/target/wasm32-unknown-unknown/release/node_runtime.compact.wasm").to_vec(),
 			authorities: initial_authorities.iter().map(|x| x.2.clone()).collect(),
 		}),
-		system: None,
+		system: Some(SystemConfig {
+			changes_trie_config: if true {
+				Some(ChangesTrieConfiguration {
+					digest_interval: 8,
+					digest_levels: 2,
+				})
+			} else {
+				None
+			},
+			..Default::default()
+		}),
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
 		}),

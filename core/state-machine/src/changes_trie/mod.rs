@@ -151,6 +151,7 @@ pub fn compute_changes_trie_root<'a, B: Backend<H>, S: Storage<H, Number>, H: Ha
 		.expect("storage is not allowed to fail within runtime");
 	match input_pairs {
 		Some(input_pairs) => {
+			println!("=== CT_BUILD: {}", input_pairs.len());
 			let transaction = input_pairs.into_iter()
 				.map(Into::into)
 				.collect::<Vec<_>>();

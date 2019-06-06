@@ -63,7 +63,7 @@ decl_storage! {
 		/// 1000 meanse that all storage updates in first 1_000 blocks will be unique.
 		UniqueRangeLength get(unique_range_length): u32 = 1_000;
 		/// Number of storage updates for each block. Restarts when finished.
-		UpdatesPerBlock get(updates_per_block): u32 = 1_000;
+		UpdatesPerBlock get(updates_per_block): u32 = 5_000;
 
 		/// Current index in UniqueRange.
 		UniqueRangeIndex get(unique_range_index): u32 = 0;
