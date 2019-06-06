@@ -872,6 +872,7 @@ impl<B, E, Block, RA> Client<B, E, Block, RA> where
 	) -> error::Result<ImportResult> where
 		E: CallExecutor<Block, Blake2Hasher> + Send + Sync + Clone,
 	{
+		let number = import_headers.post().number();
 		let parent_hash = import_headers.post().parent_hash().clone();
 		match self.backend.blockchain().status(BlockId::Hash(hash))? {
 			blockchain::BlockStatus::InChain => return Ok(ImportResult::AlreadyInChain),
@@ -900,7 +901,10 @@ impl<B, E, Block, RA> Client<B, E, Block, RA> where
 		}
 
 		// FIXME #1232: correct path logic for when to execute this function
+		let begin = ::std::time::Instant::now();
 		let (storage_update,changes_update,storage_changes) = self.block_execution(&operation.op, &import_headers, origin, hash, body.clone())?;
+		let end = ::std::time::Instant::now();
+		println!("=== BLOCK#{}: {}", number, (end - begin).as_nanos());
 
 		let is_new_best = finalized || match fork_choice {
 			ForkChoiceStrategy::LongestChain => import_headers.post().number() > &last_best_number,
