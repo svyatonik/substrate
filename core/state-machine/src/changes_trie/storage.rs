@@ -16,7 +16,7 @@
 
 //! Changes trie storage utilities.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use hash_db::Hasher;
 use trie::DBValue;
 use trie::MemoryDB;
@@ -24,6 +24,8 @@ use parking_lot::RwLock;
 use crate::changes_trie::{RootsStorage, Storage, AnchorBlockId, BlockNumber};
 use crate::trie_backend_essence::TrieBackendStorage;
 
+#[cfg(test)]
+use std::collections::HashSet;
 #[cfg(test)]
 use crate::backend::insert_into_memory_db;
 #[cfg(test)]
@@ -130,10 +132,6 @@ impl<H: Hasher, Number: BlockNumber> RootsStorage<H, Number> for InMemoryStorage
 }
 
 impl<H: Hasher, Number: BlockNumber> Storage<H, Number> for InMemoryStorage<H, Number> {
-	fn cached_changed_keys(&self, _root: &H::Out) -> Option<HashSet<Vec<u8>>> {
-		None
-	}
-
 	fn get(&self, key: &H::Out, prefix: &[u8]) -> Result<Option<DBValue>, String> {
 		MemoryDB::<H>::get(&self.data.read().mdb, key, prefix)
 	}

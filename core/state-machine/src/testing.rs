@@ -231,7 +231,7 @@ impl<H, N> Externalities<H> for TestExternalities<H, N>
 			Some(&self.changes_trie_storage),
 			&self.overlay,
 			parent,
-		)?.map(|(root, _, _)| root.clone()))
+		)?.map(|(root, _)| root.clone()))
 	}
 
 	fn offchain(&mut self) -> Option<&mut dyn offchain::Externalities> {
