@@ -36,16 +36,19 @@
 //! are propagated through its storage root on the top level storage.
 
 mod build;
+mod build_cache;
 mod build_iterator;
 mod changes_iterator;
 mod input;
 mod prune;
 mod storage;
 
+pub use self::build_cache::{BuildCache, CachedBuildData};
 pub use self::storage::InMemoryStorage;
 pub use self::changes_iterator::{key_changes, key_changes_proof, key_changes_proof_check};
 pub use self::prune::{prune, oldest_non_pruned_trie};
 
+use std::collections::HashSet;
 use hash_db::Hasher;
 use crate::backend::Backend;
 use num_traits::{One, Zero};
@@ -65,6 +68,7 @@ pub trait BlockNumber:
 	Clone +
 	From<u32> + One + Zero +
 	PartialEq + Ord +
+	::std::hash::Hash +
 	::std::ops::Add<Self, Output=Self> + ::std::ops::Sub<Self, Output=Self> +
 	::std::ops::Mul<Self, Output=Self> + ::std::ops::Div<Self, Output=Self> +
 	::std::ops::Rem<Self, Output=Self> +
@@ -79,6 +83,7 @@ impl<T> BlockNumber for T where T:
 	Clone +
 	From<u32> + One + Zero +
 	PartialEq + Ord +
+	::std::hash::Hash +
 	::std::ops::Add<Self, Output=Self> + ::std::ops::Sub<Self, Output=Self> +
 	::std::ops::Mul<Self, Output=Self> + ::std::ops::Div<Self, Output=Self> +
 	::std::ops::Rem<Self, Output=Self> +
@@ -107,6 +112,8 @@ pub trait RootsStorage<H: Hasher, Number: BlockNumber>: Send + Sync {
 
 /// Changes trie storage. Provides access to trie roots and trie nodes.
 pub trait Storage<H: Hasher, Number: BlockNumber>: RootsStorage<H, Number> {
+	/// Get cached changed keys at trie with given root. Returns None if entry is missing from the cache.
+	fn cached_changed_keys(&self, root: &H::Out) -> Option<HashSet<Vec<u8>>>;
 	/// Get a trie node.
 	fn get(&self, key: &H::Out, prefix: &[u8]) -> Result<Option<DBValue>, String>;
 }
@@ -134,7 +141,7 @@ pub fn compute_changes_trie_root<'a, B: Backend<H>, S: Storage<H, Number>, H: Ha
 	storage: Option<&'a S>,
 	changes: &OverlayedChanges,
 	parent_hash: H::Out,
-) -> Result<Option<(H::Out, Vec<(Vec<u8>, Vec<u8>)>)>, ()>
+) -> Result<Option<(H::Out, Vec<(Vec<u8>, Vec<u8>)>, Option<CachedBuildData<H::Out, Number>>)>, ()>
 	where
 		H::Out: Ord + 'static,
 {
@@ -147,17 +154,12 @@ pub fn compute_changes_trie_root<'a, B: Backend<H>, S: Storage<H, Number>, H: Ha
 	let parent = storage.build_anchor(parent_hash).map_err(|_| ())?;
 
 	// storage errors are considered fatal (similar to situations when runtime fetches values from storage)
-	let input_pairs = prepare_input::<B, S, H, Number>(backend, storage, config, changes, &parent)
+	let (input_pairs, cached_data) = prepare_input::<B, S, H, Number>(backend, storage, config, changes, &parent)
 		.expect("storage is not allowed to fail within runtime");
-	match input_pairs {
-		Some(input_pairs) => {
-			let transaction = input_pairs.into_iter()
-				.map(Into::into)
-				.collect::<Vec<_>>();
-			let root = trie_root::<H, _, _, _>(transaction.iter().map(|(k, v)| (&*k, &*v)));
-
-			Ok(Some((root, transaction)))
-		},
-		None => Ok(None),
-	}
+	let transaction = input_pairs.into_iter()
+		.map(Into::into)
+		.collect::<Vec<_>>();
+	let root = trie_root::<H, _, _, _>(transaction.iter().map(|(k, v)| (&*k, &*v)));
+	let cached_data = cached_data.map(|d| d.complete(root.clone()));
+	Ok(Some((root, transaction, cached_data)))
 }
