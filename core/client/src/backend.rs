@@ -22,10 +22,10 @@ use primitives::ChangesTrieConfiguration;
 use runtime_primitives::{generic::BlockId, Justification, StorageOverlay, ChildrenStorageOverlay};
 use runtime_primitives::traits::{Block as BlockT, NumberFor};
 use state_machine::backend::Backend as StateBackend;
-use state_machine::ChangesTrieStorage as StateChangesTrieStorage;
+use state_machine::{ChangesTrieStorage as StateChangesTrieStorage, ChangesTrieTransaction};
 use consensus::well_known_cache_keys;
 use hash_db::Hasher;
-use trie::MemoryDB;
+use parking_lot::Mutex;
 
 /// State of a new block.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,7 +84,7 @@ pub trait BlockImportOperation<Block, H> where
 	/// Set top level storage changes.
 	fn update_storage(&mut self, update: Vec<(Vec<u8>, Option<Vec<u8>>)>) -> error::Result<()>;
 	/// Inject changes trie data into the database.
-	fn update_changes_trie(&mut self, update: MemoryDB<H>) -> error::Result<()>;
+	fn update_changes_trie(&mut self, update: ChangesTrieTransaction<H, NumberFor<Block>>) -> error::Result<()>;
 	/// Insert auxiliary keys. Values are `None` if should be deleted.
 	fn insert_aux<I>(&mut self, ops: I) -> error::Result<()>
 		where I: IntoIterator<Item=(Vec<u8>, Option<Vec<u8>>)>;
@@ -174,6 +174,13 @@ pub trait Backend<Block, H>: AuxStore + Send + Sync where
 	fn get_aux(&self, key: &[u8]) -> error::Result<Option<Vec<u8>>> {
 		AuxStore::get_aux(self, key)
 	}
+
+	/// Gain access to the import lock around this backend.
+	/// _Note_ Backend isn't expected to acquire the lock by itself ever. Rather
+	/// the using components should acquire and hold the lock whenever they do
+	/// something that the import of a block would interfere with, e.g. importing
+	/// a new block or calculating the best head.
+	fn get_import_lock(&self) -> &Mutex<()>;
 }
 
 /// Changes trie storage that supports pruning.

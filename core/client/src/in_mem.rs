@@ -16,9 +16,9 @@
 
 //! In memory client backend
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use parking_lot::RwLock;
+use parking_lot::{RwLock, Mutex};
 use primitives::{ChangesTrieConfiguration, storage::well_known_keys};
 use runtime_primitives::generic::BlockId;
 use runtime_primitives::traits::{
@@ -27,7 +27,7 @@ use runtime_primitives::traits::{
 };
 use runtime_primitives::{Justification, StorageOverlay, ChildrenStorageOverlay};
 use state_machine::backend::{Backend as StateBackend, InMemory};
-use state_machine::{self, InMemoryChangesTrieStorage, ChangesTrieAnchorBlockId};
+use state_machine::{self, InMemoryChangesTrieStorage, ChangesTrieAnchorBlockId, ChangesTrieTransaction};
 use hash_db::Hasher;
 use trie::MemoryDB;
 use consensus::well_known_cache_keys::Id as CacheKeyId;
@@ -487,8 +487,8 @@ where
 		Ok(())
 	}
 
-	fn update_changes_trie(&mut self, update: MemoryDB<H>) -> error::Result<()> {
-		self.changes_trie_update = Some(update);
+	fn update_changes_trie(&mut self, update: ChangesTrieTransaction<H, NumberFor<Block>>) -> error::Result<()> {
+		self.changes_trie_update = Some(update.0);
 		Ok(())
 	}
 
@@ -541,6 +541,7 @@ where
 	states: RwLock<HashMap<Block::Hash, InMemory<H>>>,
 	changes_trie_storage: ChangesTrieStorage<Block, H>,
 	blockchain: Blockchain<Block>,
+	import_lock: Mutex<()>,
 }
 
 impl<Block, H> Backend<Block, H>
@@ -555,6 +556,7 @@ where
 			states: RwLock::new(HashMap::new()),
 			changes_trie_storage: ChangesTrieStorage(InMemoryChangesTrieStorage::new()),
 			blockchain: Blockchain::new(),
+			import_lock: Default::default(),
 		}
 	}
 }
@@ -684,6 +686,10 @@ where
 	fn revert(&self, _n: NumberFor<Block>) -> error::Result<NumberFor<Block>> {
 		Ok(Zero::zero())
 	}
+
+	fn get_import_lock(&self) -> &Mutex<()> {
+		&self.import_lock
+	}
 }
 
 impl<Block, H> backend::LocalBackend<Block, H> for Backend<Block, H>
@@ -744,6 +750,10 @@ impl<Block, H> state_machine::ChangesTrieStorage<H, NumberFor<Block>> for Change
 		Block: BlockT,
 		H: Hasher,
 {
+	fn cached_changed_keys(&self, _root: &H::Out) -> Option<HashSet<Vec<u8>>> {
+		None
+	}
+
 	fn get(&self, _key: &H::Out, _prefix: &[u8]) -> Result<Option<state_machine::DBValue>, String> {
 		Err("Dummy implementation".into())
 	}

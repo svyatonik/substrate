@@ -33,7 +33,7 @@ mod utils;
 use std::sync::Arc;
 use std::path::PathBuf;
 use std::io;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use client::backend::NewBlockState;
 use client::blockchain::HeaderBackend;
@@ -53,7 +53,7 @@ use runtime_primitives::traits::{
 use runtime_primitives::BuildStorage;
 use state_machine::backend::Backend as StateBackend;
 use executor::RuntimeInfo;
-use state_machine::{CodeExecutor, DBValue};
+use state_machine::{CodeExecutor, DBValue, ChangesTrieTransaction, ChangesTrieCachedBuildData, ChangesTrieBuildCache};
 use crate::utils::{Meta, db_err, meta_keys, read_db, block_id_to_lookup_key, read_meta};
 use client::leaves::{LeafSet, FinalizationDisplaced};
 use client::children;
@@ -365,6 +365,7 @@ pub struct BlockImportOperation<Block: BlockT, H: Hasher> {
 	db_updates: PrefixedMemoryDB<H>,
 	storage_updates: Vec<(Vec<u8>, Option<Vec<u8>>)>,
 	changes_trie_updates: MemoryDB<H>,
+	changes_trie_cache_update: Option<ChangesTrieCachedBuildData<H::Out, NumberFor<Block>>>,
 	pending_block: Option<PendingBlock<Block>>,
 	aux_ops: Vec<(Vec<u8>, Option<Vec<u8>>)>,
 	finalized_blocks: Vec<(BlockId<Block>, Option<Justification>)>,
@@ -443,8 +444,9 @@ where Block: BlockT<Hash=H256>,
 		Ok(root)
 	}
 
-	fn update_changes_trie(&mut self, update: MemoryDB<Blake2Hasher>) -> Result<(), client::error::Error> {
-		self.changes_trie_updates = update;
+	fn update_changes_trie(&mut self, update: ChangesTrieTransaction<Blake2Hasher, NumberFor<Block>>) -> Result<(), client::error::Error> {
+		self.changes_trie_updates = update.0;
+		self.changes_trie_cache_update = update.1;
 		Ok(())
 	}
 
@@ -515,6 +517,7 @@ pub struct DbChangesTrieStorage<Block: BlockT> {
 	db: Arc<dyn KeyValueDB>,
 	meta: Arc<RwLock<Meta<NumberFor<Block>, Block::Hash>>>,
 	min_blocks_to_keep: Option<u32>,
+	cache: RwLock<ChangesTrieBuildCache<Block::Hash, NumberFor<Block>>>,
 	_phantom: ::std::marker::PhantomData<Block>,
 }
 
@@ -524,6 +527,10 @@ impl<Block: BlockT<Hash=H256>> DbChangesTrieStorage<Block> {
 		for (key, (val, _)) in changes_trie.drain() {
 			tx.put(columns::CHANGES_TRIE, &key[..], &val);
 		}
+	}
+
+	pub fn commit_cache(&self, cache_update: ChangesTrieCachedBuildData<Block::Hash, NumberFor<Block>>) {
+		self.cache.write().insert(cache_update);
 	}
 
 	/// Prune obsolete changes tries.
@@ -639,6 +646,10 @@ impl<Block> state_machine::ChangesTrieStorage<Blake2Hasher, NumberFor<Block>>
 where
 	Block: BlockT<Hash=H256>,
 {
+	fn cached_changed_keys(&self, root: &H256) -> Option<HashSet<Vec<u8>>> {
+		self.cache.read().get(root).cloned()
+	}
+
 	fn get(&self, key: &H256, _prefix: &[u8]) -> Result<Option<DBValue>, String> {
 		self.db.get(columns::CHANGES_TRIE, &key[..])
 			.map_err(|err| format!("{}", err))
@@ -656,6 +667,7 @@ pub struct Backend<Block: BlockT> {
 	blockchain: BlockchainDb<Block>,
 	canonicalization_delay: u64,
 	shared_cache: SharedCache<Block, Blake2Hasher>,
+	import_lock: Mutex<()>,
 }
 
 impl<Block: BlockT<Hash=H256>> Backend<Block> {
@@ -712,6 +724,7 @@ impl<Block: BlockT<Hash=H256>> Backend<Block> {
 			db,
 			meta,
 			min_blocks_to_keep: if is_archive_pruning { None } else { Some(MIN_BLOCKS_TO_KEEP_CHANGES_TRIES_FOR) },
+			cache: RwLock::new(ChangesTrieBuildCache::new()),
 			_phantom: Default::default(),
 		};
 
@@ -722,6 +735,7 @@ impl<Block: BlockT<Hash=H256>> Backend<Block> {
 			blockchain,
 			canonicalization_delay,
 			shared_cache: new_shared_cache(state_cache_size),
+			import_lock: Default::default(),
 		})
 	}
 
@@ -1020,7 +1034,6 @@ impl<Block: BlockT<Hash=H256>> Backend<Block> {
 			self.changes_tries_storage.commit(&mut transaction, changes_trie_updates);
 			let cache = operation.old_state.release(); // release state reference so that it can be finalized
 
-
 			if finalized {
 				// TODO: ensure best chain contains this block.
 				self.ensure_sequential_finalization(header, Some(last_finalized_hash))?;
@@ -1072,6 +1085,10 @@ impl<Block: BlockT<Hash=H256>> Backend<Block> {
 		}
 
 		let write_result = self.storage.db.write(transaction).map_err(db_err);
+
+		if let Some(changes_trie_cache_update) = operation.changes_trie_cache_update {
+			self.changes_tries_storage.commit_cache(changes_trie_cache_update);
+		}
 
 		if let Some((number, hash, enacted, retracted, displaced_leaf, is_best, mut cache)) = imported {
 			if let Err(e) = write_result {
@@ -1199,6 +1216,7 @@ impl<Block> client::backend::Backend<Block, Blake2Hasher> for Backend<Block> whe
 			db_updates: PrefixedMemoryDB::default(),
 			storage_updates: Default::default(),
 			changes_trie_updates: MemoryDB::default(),
+			changes_trie_cache_update: None,
 			aux_ops: Vec::new(),
 			finalized_blocks: Vec::new(),
 			set_head: None,
@@ -1350,6 +1368,10 @@ impl<Block> client::backend::Backend<Block, Blake2Hasher> for Backend<Block> whe
 		}
 		Ok(())
 	}
+
+	fn get_import_lock(&self) -> &Mutex<()> {
+		&self.import_lock
+	}
 }
 
 impl<Block> client::backend::LocalBackend<Block, Blake2Hasher> for Backend<Block>
@@ -1419,7 +1441,7 @@ mod tests {
 		let mut op = backend.begin_operation().unwrap();
 		backend.begin_state_operation(&mut op, block_id).unwrap();
 		op.set_block_data(header, None, None, NewBlockState::Best).unwrap();
-		op.update_changes_trie(changes_trie_update).unwrap();
+		op.update_changes_trie((changes_trie_update, None)).unwrap();
 		backend.commit_operation(op).unwrap();
 
 		header_hash

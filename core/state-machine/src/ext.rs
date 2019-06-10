@@ -19,7 +19,7 @@
 use std::{error, fmt, cmp::Ord};
 use log::warn;
 use crate::backend::Backend;
-use crate::changes_trie::{Storage as ChangesTrieStorage, compute_changes_trie_root};
+use crate::changes_trie::{Storage as ChangesTrieStorage, CachedBuildData as ChangesTrieCachedBuildData, compute_changes_trie_root};
 use crate::{Externalities, OverlayedChanges, ChildStorageKey};
 use hash_db::Hasher;
 use primitives::offchain;
@@ -78,7 +78,7 @@ where
 	/// This differs from `storage_transaction` behavior, because the moment when
 	/// `storage_changes_root` is called matters + we need to remember additional
 	/// data at this moment (block number).
-	changes_trie_transaction: Option<(MemoryDB<H>, H::Out)>,
+	changes_trie_transaction: Option<(MemoryDB<H>, H::Out, Option<ChangesTrieCachedBuildData<H::Out, N>>)>,
 	/// Additional externalities for offchain workers.
 	///
 	/// If None, some methods from the trait might not supported.
@@ -115,14 +115,14 @@ where
 	}
 
 	/// Get the transaction necessary to update the backend.
-	pub fn transaction(mut self) -> (B::Transaction, Option<MemoryDB<H>>) {
+	pub fn transaction(mut self) -> (B::Transaction, Option<crate::ChangesTrieTransaction<H, N>>) {
 		let _ = self.storage_root();
 
 		let (storage_transaction, changes_trie_transaction) = (
 			self.storage_transaction
 				.expect("storage_transaction always set after calling storage root; qed"),
 			self.changes_trie_transaction
-				.map(|(tx, _)| tx),
+				.map(|(tx, _, cache)| (tx, cache)),
 		);
 
 		(
@@ -320,13 +320,13 @@ where
 
 	fn storage_changes_root(&mut self, parent_hash: H::Out) -> Result<Option<H::Out>, ()> {
 		let _guard = panic_handler::AbortGuard::new(true);
-		let root_and_tx = compute_changes_trie_root::<_, T, H, N>(
+		let root_and_tx_and_cache = compute_changes_trie_root::<_, T, H, N>(
 			self.backend,
 			self.changes_trie_storage.clone(),
 			self.overlay,
 			parent_hash,
 		)?;
-		let root_and_tx = root_and_tx.map(|(root, changes)| {
+		let root_and_tx_and_cache = root_and_tx_and_cache.map(|(root, changes, cache)| {
 			let mut calculated_root = Default::default();
 			let mut mdb = MemoryDB::default();
 			{
@@ -336,10 +336,10 @@ where
 				}
 			}
 
-			(mdb, root)
+			(mdb, root, cache)
 		});
-		let root = root_and_tx.as_ref().map(|(_, root)| root.clone());
-		self.changes_trie_transaction = root_and_tx;
+		let root = root_and_tx_and_cache.as_ref().map(|(_, root, _)| root.clone());
+		self.changes_trie_transaction = root_and_tx_and_cache;
 		Ok(root)
 	}
 
