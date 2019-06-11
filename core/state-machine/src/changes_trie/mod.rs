@@ -128,7 +128,7 @@ pub type Configuration = primitives::ChangesTrieConfiguration;
 /// Compute the changes trie root and transaction for given block.
 /// Returns Err(()) if unknown `parent_hash` has been passed.
 /// Returns Ok(None) if there's no data to perform computation.
-/// Panics if background storage returns an error.
+/// Panics if background storage returns an error OR if insert to MemoryDB fails.
 pub fn build_changes_trie<'a, B: Backend<H>, S: Storage<H, Number>, H: Hasher, Number: BlockNumber>(
 	backend: &B,
 	storage: Option<&'a S>,
@@ -148,13 +148,14 @@ pub fn build_changes_trie<'a, B: Backend<H>, S: Storage<H, Number>, H: Hasher, N
 
 	// storage errors are considered fatal (similar to situations when runtime fetches values from storage)
 	let input_pairs = prepare_input::<B, S, H, Number>(backend, storage, config, changes, &parent)
-		.expect("storage is not allowed to fail within runtime");
+		.expect("changes trie: storage access is not allowed to fail within runtime");
 	let mut root = Default::default();
 	let mut mdb = MemoryDB::default();
 	{
 		let mut trie = TrieDBMut::<H>::new(&mut mdb, &mut root);
 		for (key, value) in input_pairs.map(Into::into) {
-			trie.insert(&key, &value).expect("TODO");
+			trie.insert(&key, &value)
+				.expect("changes trie: insertion to trie is not allowed to fail within runtime");
 		}
 	}
 

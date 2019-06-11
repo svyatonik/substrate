@@ -20,7 +20,8 @@
 use crate::changes_trie::{Configuration, BlockNumber};
 
 /// Returns iterator of OTHER blocks that are required for inclusion into
-/// changes trie of given block.
+/// changes trie of given block. Blocks are guaranteed to be returned in
+/// ascending order.
 pub fn digest_build_iterator<Number: BlockNumber>(
 	config: &Configuration,
 	block: Number,
