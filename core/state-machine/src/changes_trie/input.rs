@@ -61,6 +61,32 @@ pub enum InputKey<Number: BlockNumber> {
 	DigestIndex(DigestIndex<Number>),
 }
 
+impl<Number: BlockNumber> InputPair<Number> {
+	/// Returns reference to DigestIndexValue if pair represents a DigestIndex.
+	pub fn as_digest_index_value(&self) -> Option<&DigestIndexValue<Number>> {
+		match *self {
+			InputPair::DigestIndex(_, ref digest_index) => Some(digest_index),
+			_ => None,
+		}
+	}
+
+	/// Returns mutable reference to ExtrinsicIndexValue if pair represents a ExtrinsicIndex.
+	pub fn as_extrinsic_index_value_mut(&mut self) -> Option<&mut ExtrinsicIndexValue> {
+		match *self {
+			InputPair::ExtrinsicIndex(_, ref mut extrinsic_index) => Some(extrinsic_index),
+			_ => None,
+		}
+	}
+
+	/// Returns mutable reference to DigestIndexValue if pair represents a DigestIndex.
+	pub fn as_digest_index_value_mut(&mut self) -> Option<&mut DigestIndexValue<Number>> {
+		match *self {
+			InputPair::DigestIndex(_, ref mut digest_index) => Some(digest_index),
+			_ => None,
+		}
+	}
+}
+
 impl<Number: BlockNumber> Into<(Vec<u8>, Vec<u8>)> for InputPair<Number> {
 	fn into(self) -> (Vec<u8>, Vec<u8>) {
 		match self {

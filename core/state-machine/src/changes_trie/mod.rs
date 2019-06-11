@@ -53,7 +53,7 @@ use parity_codec::{Decode, Encode};
 use primitives;
 use crate::changes_trie::build::prepare_input;
 use crate::overlayed_changes::OverlayedChanges;
-use trie::{DBValue, trie_root};
+use trie::{MemoryDB, TrieDBMut, TrieMut, DBValue};
 
 /// Changes that are made outside of extrinsics are marked with this index;
 pub const NO_EXTRINSIC_INDEX: u32 = 0xffffffff;
@@ -129,12 +129,12 @@ pub type Configuration = primitives::ChangesTrieConfiguration;
 /// Returns Err(()) if unknown `parent_hash` has been passed.
 /// Returns Ok(None) if there's no data to perform computation.
 /// Panics if background storage returns an error.
-pub fn compute_changes_trie_root<'a, B: Backend<H>, S: Storage<H, Number>, H: Hasher, Number: BlockNumber>(
+pub fn build_changes_trie<'a, B: Backend<H>, S: Storage<H, Number>, H: Hasher, Number: BlockNumber>(
 	backend: &B,
 	storage: Option<&'a S>,
 	changes: &OverlayedChanges,
 	parent_hash: H::Out,
-) -> Result<Option<(H::Out, Vec<(Vec<u8>, Vec<u8>)>)>, ()>
+) -> Result<Option<(MemoryDB<H>, H::Out)>, ()>
 	where
 		H::Out: Ord + 'static,
 {
@@ -149,16 +149,14 @@ pub fn compute_changes_trie_root<'a, B: Backend<H>, S: Storage<H, Number>, H: Ha
 	// storage errors are considered fatal (similar to situations when runtime fetches values from storage)
 	let input_pairs = prepare_input::<B, S, H, Number>(backend, storage, config, changes, &parent)
 		.expect("storage is not allowed to fail within runtime");
-	match input_pairs {
-		Some(input_pairs) => {
-			println!("=== CT_BUILD: {}", input_pairs.len());
-			let transaction = input_pairs.into_iter()
-				.map(Into::into)
-				.collect::<Vec<_>>();
-			let root = trie_root::<H, _, _, _>(transaction.iter().map(|(k, v)| (&*k, &*v)));
-
-			Ok(Some((root, transaction)))
-		},
-		None => Ok(None),
+	let mut root = Default::default();
+	let mut mdb = MemoryDB::default();
+	{
+		let mut trie = TrieDBMut::<H>::new(&mut mdb, &mut root);
+		for (key, value) in input_pairs.map(Into::into) {
+			trie.insert(&key, &value).expect("TODO");
+		}
 	}
+
+	Ok(Some((mdb, root)))
 }
