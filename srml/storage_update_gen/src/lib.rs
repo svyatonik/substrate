@@ -33,6 +33,14 @@ decl_module! {
 				unique_range_index = 0;
 			}
 
+			if unique_range_index % 5 == 0 {
+				storage::unhashed::put_raw(&[5], &[5]);
+			}
+
+			if unique_range_index % 10 == 0 {
+				storage::unhashed::put_raw(&[10], &unique_range_index.to_le_bytes());
+			}
+
 			for i in 0..updates_per_block {
 				let unique_range_index_le = unique_range_index.to_le_bytes();
 				let i_le = i.to_le_bytes();
