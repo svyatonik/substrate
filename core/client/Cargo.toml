@@ -29,7 +29,7 @@ sr-api-macros = { path = "../sr-api-macros" }
 time = { version = "0.1", optional = true }
 
 [dev-dependencies]
-test-client = { package = "substrate-test-client", path = "../test-client" }
+test-client = { package = "substrate-test-runtime-client", path = "../test-runtime/client" }
 kvdb-memorydb = { git = "https://github.com/paritytech/parity-common", rev="b0317f649ab2c665b7987b8475878fc4d2e1f81d" }
 
 [features]

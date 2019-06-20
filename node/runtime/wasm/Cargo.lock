@@ -1484,8 +1484,7 @@ dependencies = [
  "sr-version 2.0.0",
  "srml-aura 2.0.0",
  "srml-balances 2.0.0",
- "srml-consensus 2.0.0",
- "srml-contract 2.0.0",
+ "srml-contracts 2.0.0",
  "srml-council 2.0.0",
  "srml-democracy 2.0.0",
  "srml-executive 2.0.0",
@@ -1502,7 +1501,6 @@ dependencies = [
  "srml-treasury 2.0.0",
  "substrate-client 2.0.0",
  "substrate-consensus-aura-primitives 2.0.0",
- "substrate-consensus-authorities 2.0.0",
  "substrate-keyring 2.0.0",
  "substrate-offchain-primitives 2.0.0",
  "substrate-primitives 2.0.0",
@@ -2426,7 +2424,9 @@ dependencies = [
  "srml-support 2.0.0",
  "srml-system 2.0.0",
  "srml-timestamp 2.0.0",
+ "substrate-consensus-aura-primitives 2.0.0",
  "substrate-inherents 2.0.0",
+ "substrate-primitives 2.0.0",
 ]
 
 [[package]]
@@ -2444,21 +2444,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "srml-consensus"
-version = "2.0.0"
-dependencies = [
- "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0",
- "sr-std 2.0.0",
- "srml-support 2.0.0",
- "srml-system 2.0.0",
- "substrate-inherents 2.0.0",
- "substrate-primitives 2.0.0",
-]
-
-[[package]]
-name = "srml-contract"
+name = "srml-contracts"
 version = "2.0.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2540,7 +2526,6 @@ dependencies = [
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 2.0.0",
  "sr-std 2.0.0",
- "srml-consensus 2.0.0",
  "srml-finality-tracker 2.0.0",
  "srml-session 2.0.0",
  "srml-support 2.0.0",
@@ -2584,7 +2569,6 @@ dependencies = [
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 2.0.0",
  "sr-std 2.0.0",
- "srml-consensus 2.0.0",
  "srml-support 2.0.0",
  "srml-system 2.0.0",
  "srml-timestamp 2.0.0",
@@ -2600,7 +2584,6 @@ dependencies = [
  "sr-io 2.0.0",
  "sr-primitives 2.0.0",
  "sr-std 2.0.0",
- "srml-consensus 2.0.0",
  "srml-session 2.0.0",
  "srml-support 2.0.0",
  "srml-system 2.0.0",
@@ -2805,20 +2788,9 @@ dependencies = [
 name = "substrate-consensus-aura-primitives"
 version = "2.0.0"
 dependencies = [
- "sr-primitives 2.0.0",
- "substrate-client 2.0.0",
-]
-
-[[package]]
-name = "substrate-consensus-authorities"
-version = "2.0.0"
-dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0",
  "sr-primitives 2.0.0",
  "sr-std 2.0.0",
- "sr-version 2.0.0",
- "srml-support 2.0.0",
  "substrate-client 2.0.0",
  "substrate-primitives 2.0.0",
 ]
@@ -2869,6 +2841,7 @@ name = "substrate-finality-grandpa-primitives"
 version = "2.0.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 2.0.0",
  "sr-std 2.0.0",
  "substrate-client 2.0.0",
