@@ -33,7 +33,7 @@ decl_module! {
 				unique_range_index = 0;
 			}
 
-			if unique_range_index % 5 == 0 {
+/*			if unique_range_index % 5 == 0 {
 				storage::unhashed::put_raw(&[5], &[5]);
 			}
 
@@ -56,6 +56,47 @@ decl_module! {
 				];
 				let storage_value = &storage_key;
 				storage::unhashed::put_raw(&storage_key, storage_value);
+			}*/
+
+			const UNIQUE_CHANGES: u32 = 130;
+			const UNIQUE_FAKE_CHANGES: u32 = 20;
+			const NON_UNIQUE_CHANGES: u32 = 50;
+			const NON_UNIQUE_FAKE_CHANGES: u32 = 10;
+
+			fn make_key(range_index: u32, i: u32) -> [u8; 8] {
+				let range_index = range_index.to_le_bytes();
+				let i_le = i.to_le_bytes();
+				[
+					range_index[0],
+					range_index[1],
+					range_index[2],
+					range_index[3],
+					i_le[0],
+					i_le[1],
+					i_le[2],
+					i_le[3],
+				]
+			}
+
+			for i in 0..UNIQUE_CHANGES {
+				let key = make_key(unique_range_index, i);
+				storage::unhashed::put_raw(&key, &key);
+			}
+
+			for i in 0..UNIQUE_FAKE_CHANGES {
+				let key = make_key(unique_range_index, 1_000_000 + i);
+				storage::unhashed::kill(&key);
+			}
+
+			for i in 0..NON_UNIQUE_CHANGES {
+				let key = make_key(1_000, i);
+				let value = make_key(unique_range_index, i);
+				storage::unhashed::put_raw(&key, &value);
+			}
+
+			for i in 0..NON_UNIQUE_FAKE_CHANGES {
+				let key = make_key(1_000, 1_000_000 + i);
+				storage::unhashed::kill(&key);
 			}
 
 			<Self as Store>::UniqueRangeIndex::put(unique_range_index + 1);
@@ -69,7 +110,7 @@ decl_storage! {
 		///
 		/// 1 means that every block will have the same keys updated.
 		/// 1000 meanse that all storage updates in first 1_000 blocks will be unique.
-		UniqueRangeLength get(unique_range_length): u32 = 1_000;
+		UniqueRangeLength get(unique_range_length): u32 = 1_000_000;
 		/// Number of storage updates for each block. Restarts when finished.
 		UpdatesPerBlock get(updates_per_block): u32 = 5_000;
 

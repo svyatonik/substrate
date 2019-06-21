@@ -20,7 +20,7 @@ use primitives::{ed25519, sr25519, Pair, crypto::UncheckedInto};
 use node_primitives::{AccountId, AuraId};
 use node_runtime::{CouncilSeatsConfig, AuraConfig, DemocracyConfig, SystemConfig,
 	SessionConfig, StakingConfig, StakerStatus, TimestampConfig, BalancesConfig, TreasuryConfig,
-	SudoConfig, ContractsConfig, GrandpaConfig, IndicesConfig, Permill, Perbill, SessionKeys, SystemConfig};
+	SudoConfig, ContractsConfig, GrandpaConfig, IndicesConfig, Permill, Perbill, SessionKeys};
 pub use node_runtime::GenesisConfig;
 use substrate_service;
 use hex_literal::hex;
@@ -295,18 +295,14 @@ pub fn testnet_genesis(
 		system: Some(SystemConfig {
 			code: include_bytes!("../../runtime/wasm/target/wasm32-unknown-unknown/release/node_runtime.compact.wasm").to_vec(),
 			_genesis_phantom_data: Default::default(),
-			changes_trie_config: Default::default(),
-		}),
-		system: Some(SystemConfig {
 			changes_trie_config: if true {
 				Some(ChangesTrieConfiguration {
-					digest_interval: 1024,
+					digest_interval: 512,
 					digest_levels: 1,
 				})
 			} else {
 				None
 			},
-			..Default::default()
 		}),
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
