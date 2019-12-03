@@ -507,6 +507,9 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 	}
 }
 
+impl bridge_eth_poa::Trait for Runtime {
+}
+
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block,
@@ -538,6 +541,7 @@ construct_runtime!(
 		Offences: offences::{Module, Call, Storage, Event},
 		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Nicks: nicks::{Module, Call, Storage, Event<T>},
+		BridgeEthPoa: bridge_eth_poa::{Module},
 	}
 );
 

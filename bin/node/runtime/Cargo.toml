@@ -35,6 +35,7 @@ authority-discovery = { package = "pallet-authority-discovery", path = "../../..
 authorship = { package = "pallet-authorship", path = "../../../frame/authorship", default-features = false }
 babe = { package = "pallet-babe", path = "../../../frame/babe", default-features = false }
 balances = { package = "pallet-balances", path = "../../../frame/balances", default-features = false }
+bridge-eth-poa = { package = "pallet-bridge-eth-poa", path = "../../../frame/bridge-eth-poa", default-features = false }
 collective = { package = "pallet-collective", path = "../../../frame/collective", default-features = false }
 contracts = { package = "pallet-contracts", path = "../../../frame/contracts", default-features = false }
 contracts-rpc-runtime-api = { package = "pallet-contracts-rpc-runtime-api", path = "../../../frame/contracts/rpc/runtime-api/", default-features = false }
@@ -77,6 +78,7 @@ std = [
 	"babe-primitives/std",
 	"babe/std",
 	"balances/std",
+	"bridge-eth-poa/std",
 	"block-builder-api/std",
 	"codec/std",
 	"collective/std",
