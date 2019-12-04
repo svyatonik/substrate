@@ -56,6 +56,7 @@ pub use balances::Call as BalancesCall;
 pub use contracts::Gas;
 pub use support::StorageValue;
 pub use staking::StakerStatus;
+pub use bridge_eth_poa::Call as BridgeEthPoaCall;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
