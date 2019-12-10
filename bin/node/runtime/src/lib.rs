@@ -509,6 +509,7 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 }
 
 impl bridge_eth_poa::Trait for Runtime {
+	type OnHeadersSubmitted = ();
 }
 
 construct_runtime!(
