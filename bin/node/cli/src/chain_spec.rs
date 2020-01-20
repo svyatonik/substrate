@@ -292,6 +292,7 @@ pub fn testnet_genesis(
 		}),
 		pallet_membership_Instance1: Some(Default::default()),
 		pallet_treasury: Some(Default::default()),
+		substrate_secret_store_runtime: Some(Default::default()),
 	}
 }
 

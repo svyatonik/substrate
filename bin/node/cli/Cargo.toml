@@ -45,6 +45,7 @@ sp-inherents = { path = "../../../primitives/inherents" }
 sp-keyring = { path = "../../../primitives/keyring" }
 sp-io = { path = "../../../primitives/io" }
 sp-consensus = { path = "../../../primitives/consensus/common" }
+ss-primitives = { path = "../../../secret-store/primitives" }
 
 # client dependencies
 sc-client-api = { path = "../../../client/api" }
@@ -73,12 +74,14 @@ pallet-transaction-payment = { path = "../../../frame/transaction-payment" }
 frame-support = { path = "../../../frame/support", default-features = false }
 pallet-im-online = { path = "../../../frame/im-online", default-features = false }
 pallet-authority-discovery = { path = "../../../frame/authority-discovery"}
+frame-system-rpc-runtime-api = { path = "../../../frame/system/rpc/runtime-api/", default-features = false }
 
 # node-specific dependencies
 node-runtime = { path = "../runtime" }
 node-rpc = { path = "../rpc" }
 node-primitives = { path = "../primitives" }
 node-executor = { path = "../executor" }
+substrate-secret-store-connector = { path = "../../../secret-store/connector" }
 
 # CLI-specific dependencies
 tokio = { version = "0.1.22", optional = true }

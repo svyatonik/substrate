@@ -29,6 +29,7 @@ sp-keyring = { path = "../../../primitives/keyring", optional = true }
 sp-session = { path = "../../../primitives/session", default-features = false }
 sp-transaction-pool = { path = "../../../primitives/transaction-pool", default-features = false }
 sp-version = { path = "../../../primitives/version", default-features = false }
+ss-primitives = { path = "../../../secret-store/primitives", default-features = false }
 
 # frame dependencies
 pallet-authority-discovery = { path = "../../../frame/authority-discovery", default-features = false }
@@ -61,6 +62,7 @@ pallet-treasury = { path = "../../../frame/treasury", default-features = false }
 pallet-utility = { path = "../../../frame/utility", default-features = false }
 pallet-transaction-payment = { path = "../../../frame/transaction-payment", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { path = "../../../frame/transaction-payment/rpc/runtime-api/", default-features = false }
+substrate-secret-store-runtime = { path = "../../../secret-store/runtime", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", path = "../../../utils/wasm-builder-runner", version = "1.0.4" }
@@ -119,4 +121,6 @@ std = [
 	"sp-transaction-pool/std",
 	"pallet-utility/std",
 	"sp-version/std",
+	"ss-primitives/std",
+	"substrate-secret-store-runtime/std",
 ]

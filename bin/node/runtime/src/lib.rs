@@ -56,6 +56,7 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_contracts::Gas;
 pub use frame_support::StorageValue;
 pub use pallet_staking::StakerStatus;
+pub use substrate_secret_store_runtime::Call as SecretStoreCall;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
@@ -477,6 +478,11 @@ impl pallet_nicks::Trait for Runtime {
 	type MaxLength = MaxLength;
 }
 
+impl substrate_secret_store_runtime::Trait for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+}
+
 impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
 	type Public = <Signature as traits::Verify>::Signer;
 	type Signature = Signature;
@@ -539,6 +545,7 @@ construct_runtime!(
 		Offences: pallet_offences::{Module, Call, Storage, Event},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
+		SecretStore: substrate_secret_store_runtime::{Module, Call, Event, Config<T>},
 	}
 );
 
@@ -715,6 +722,54 @@ impl_runtime_apis! {
 	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			SessionKeys::generate(seed)
+		}
+	}
+
+	impl ss_primitives::acl_storage::AclStorageRuntimeApi<Block> for Runtime {
+		fn check(
+			_requester: ss_primitives::RequesterId,
+			_key: ss_primitives::ServerKeyId,
+		) -> bool {
+			true
+		}
+	}
+
+	impl ss_primitives::key_server_set::KeyServerSetWithMigrationRuntimeApi<Block> for Runtime {
+		fn snapshot(
+			key_server: ss_primitives::KeyServerId,
+		) -> ss_primitives::key_server_set::KeyServerSetSnapshot {
+			SecretStore::key_server_set_snapshot(key_server)
+		}
+	}
+
+	impl ss_primitives::service::ServiceRuntimeApi<Block> for Runtime {
+		fn pending_tasks_count() -> u32 {
+			SecretStore::service_tasks_count()
+		}
+
+		fn pending_task(index: u32) -> Option<ss_primitives::service::ServiceTask> {
+			SecretStore::service_task(index)
+		}
+
+		fn is_server_key_generation_response_required(
+			key_server: ss_primitives::KeyServerId,
+			key: ss_primitives::ServerKeyId,
+		) -> bool {
+			SecretStore::is_server_key_generation_response_required(key_server, key)
+		}
+
+		fn is_server_key_retrieval_response_required(
+			key_server: ss_primitives::KeyServerId,
+			key: ss_primitives::ServerKeyId,
+		) -> bool {
+			SecretStore::is_server_key_retrieval_response_required(key_server, key)
+		}
+
+		fn is_document_key_store_response_required(
+			key_server: ss_primitives::KeyServerId,
+			key: ss_primitives::ServerKeyId,
+		) -> bool {
+			SecretStore::is_document_key_store_response_required(key_server, key)
 		}
 	}
 }

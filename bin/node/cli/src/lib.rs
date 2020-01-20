@@ -39,6 +39,8 @@ mod browser;
 mod cli;
 #[cfg(feature = "cli")]
 mod factory_impl;
+#[cfg(feature = "cli")]
+mod secret_store;
 
 #[cfg(feature = "browser")]
 pub use browser::*;
