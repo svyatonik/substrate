@@ -59,38 +59,3 @@ sp_api::decl_runtime_apis! {
 		fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool;
 	}
 }
-
-#[cfg(feature = "std")]
-impl Into<crate::secret_store::ServiceTask> for ServiceTask {
-	fn into(self) -> crate::secret_store::ServiceTask {
-		match self {
-			ServiceTask::GenerateServerKey(key_id, requester_id, threshold)
-				=> crate::secret_store::ServiceTask::GenerateServerKey(
-					key_id.into(),
-					requester_id.into(),
-					threshold.into(),
-				),
-			ServiceTask::RetrieveServerKey(key_id)
-				=> crate::secret_store::ServiceTask::RetrieveServerKey(
-					key_id.into(),
-				),
-			ServiceTask::StoreDocumentKey(key_id, requester_id, common_point, encrypted_point)
-				=> crate::secret_store::ServiceTask::StoreDocumentKey(
-					key_id.into(),
-					requester_id.into(),
-					common_point.into(),
-					encrypted_point.into(),
-				),
-			ServiceTask::RetrieveShadowDocumentKeyCommon(key_id, requester_id)
-				=> crate::secret_store::ServiceTask::RetrieveShadowDocumentKeyCommon(
-					key_id.into(),
-					requester_id.into(),
-				),
-			ServiceTask::RetrieveShadowDocumentKeyPersonal(key_id, requester_id)
-				=> crate::secret_store::ServiceTask::RetrieveShadowDocumentKeyPersonal(
-					key_id.into(),
-					requester_id.into(),
-				),
-		}
-	}
-}

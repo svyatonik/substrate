@@ -81,7 +81,6 @@ node-runtime = { path = "../runtime" }
 node-rpc = { path = "../rpc" }
 node-primitives = { path = "../primitives" }
 node-executor = { path = "../executor" }
-substrate-secret-store-connector = { path = "../../../secret-store/connector" }
 
 # CLI-specific dependencies
 tokio = { version = "0.1.22", optional = true }

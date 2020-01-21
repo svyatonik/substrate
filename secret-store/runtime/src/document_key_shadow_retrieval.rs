@@ -276,16 +276,17 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		let key_server_index = SecretStoreService::<T>::key_server_index_from_origin(origin)?;
 		if request.threshold.is_none() {
 			// insert response
-			let invalid_response_support = SecretStoreService::<T>
+			/*let invalid_response_support = SecretStoreService::<T>
 				::insert_response::<_, _, DocumentKeyShadowRetrievalCommonResponses>(
 					key_server_index,
 					key_servers_count / 2,
 					&mut request.common_responses,
 					&retrieval_id,
 					&(Vec::new(), 0xFF),
-				)?;
+				)?;*/
+			unimplemented!("TODO");
 
-			// ...and check if there are enough confirmations for invalid response
+/*			// ...and check if there are enough confirmations for invalid response
 			if invalid_response_support == ResponseSupport::Unconfirmed {
 				DocumentKeyShadowRetrievalRequests::<T>::insert(retrieval_id, request);
 				return Ok(());
@@ -294,7 +295,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 			// delete request and fire event
 			delete_request::<T>(&retrieval_id);
 			Module::<T>::deposit_event(Event::DocumentKeyShadowRetrievalError(id, requester));
-			return Ok(());
+			return Ok(());*/
 		}
 
 		// TODO: do we reset this when KSset changes???

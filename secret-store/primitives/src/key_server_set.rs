@@ -40,25 +40,3 @@ sp_api::decl_runtime_apis! {
 		fn snapshot(key_server: KeyServerId) -> KeyServerSetSnapshot;
 	}
 }
-
-#[cfg(feature = "std")]
-impl Into<crate::secret_store::KeyServerSetSnapshot> for KeyServerSetSnapshot {
-	fn into(self) -> crate::secret_store::KeyServerSetSnapshot {
-		crate::secret_store::KeyServerSetSnapshot {
-			current_set: self.current_set.into_iter()
-				.map(|ks| (ks.0.into(), ks.1.into()))
-				.collect(),
-			new_set: self.new_set.into_iter()
-				.map(|ks| (ks.0.into(), ks.1.into()))
-				.collect(),
-			migration: self.migration.map(|migration| crate::secret_store::KeyServerSetMigration {
-				id: migration.id.into(),
-				set: migration.set.into_iter()
-					.map(|ks| (ks.0.into(), ks.1.into()))
-					.collect(),
-				master: migration.master.into(),
-				is_confirmed: migration.is_confirmed,
-			}),
-		}
-	}
-}

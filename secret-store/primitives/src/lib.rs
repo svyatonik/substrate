@@ -6,34 +6,32 @@ pub mod acl_storage;
 pub mod key_server_set;
 pub mod service;
 
-#[cfg(feature = "std")]
-pub mod secret_store;
-
 /// Any entrity is identified by this id.
-pub type EntityId = [u8; 32];
+pub type EntityId = sp_core::H512;
 
 /// Requester id.
-pub type RequesterId = EntityId;
-pub type Address = EntityId;
+pub type RequesterId = sp_core::H160;
+///
+pub type Address = sp_core::H160;
 /// Server key id.
-pub type KeyServerId = [u8; 32]; // TODO: 64
+pub type KeyServerId = sp_core::H512;
 
 /// Network address type.
 pub type NetworkAddress = Vec<u8>;
 
 ///
-pub type ServerKeyId = [u8; 32];
+pub type ServerKeyId = sp_core::H256;
 
 ///
-pub type ServerKeyPublic = Vec<u8>;
+pub type ServerKeyPublic = sp_core::H512;
 
 ///
-pub type CommonPoint = Vec<u8>;
+pub type CommonPoint = sp_core::H512;
 
 ///
-pub type EncryptedPoint = Vec<u8>;
+pub type EncryptedPoint = sp_core::H512;
 
-pub type DecryptedSecret = Vec<u8>;
+pub type DecryptedSecret = sp_core::H512;
 
 pub type DocumentKeyShadow = Vec<u8>;
 
