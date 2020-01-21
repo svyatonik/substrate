@@ -18,7 +18,7 @@ use frame_support::{StorageMap, traits::Currency, decl_module, decl_event, decl_
 use frame_system::{self as system, ensure_signed};
 use ss_primitives::{
 	KeyServerId, EntityId, NetworkAddress,
-	ServerKeyId, ServerKeyPublic,
+	ServerKeyId, ServerKeyPublic, Address,
 	key_server_set::{KeyServerSetSnapshot, MigrationId as MigrationIdT},
 	CommonPoint, EncryptedPoint,
 	service::{ServiceTask, ServiceResponse},
@@ -225,7 +225,7 @@ decl_event!(
 		MigrationCompleted,
 
 		/// 
-		ServerKeyGenerationRequested(ServerKeyId, EntityId, u8),
+		ServerKeyGenerationRequested(ServerKeyId, Address, u8),
 		///
 		ServerKeyGenerated(ServerKeyId, ServerKeyPublic),
 		///
@@ -239,7 +239,7 @@ decl_event!(
 		ServerKeyRetrievalError(ServerKeyId),
 
 		///
-		DocumentKeyStoreRequested(ServerKeyId, EntityId, CommonPoint, EncryptedPoint),
+		DocumentKeyStoreRequested(ServerKeyId, Address, CommonPoint, EncryptedPoint),
 		///
 		DocumentKeyStored(ServerKeyId),
 		///

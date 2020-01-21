@@ -35,6 +35,10 @@ pub type DecryptedSecret = sp_core::H512;
 
 pub type DocumentKeyShadow = Vec<u8>;
 
+pub fn into_author_address(entity: EntityId) -> Address {
+	unimplemented!()
+}
+
 /*/// Key Server Set state.
 #[derive(Debug, PartialEq)]
 pub struct KeyServerSetSnapshot {

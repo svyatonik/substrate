@@ -19,7 +19,7 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{EntityId, ServerKeyId, KeyServerId, CommonPoint, EncryptedPoint};
+use ss_primitives::{EntityId, ServerKeyId, KeyServerId, CommonPoint, EncryptedPoint, into_author_address};
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, SecretStoreService};
 use super::{
@@ -87,7 +87,7 @@ impl<T: Trait> DocumentKeyStoreService<T> {
 		DocumentKeyStoreRequestsKeys::append(sp_std::iter::once(&id))?;
 
 		// emit event
-		Module::<T>::deposit_event(Event::DocumentKeyStoreRequested(id, author, common_point, encrypted_point));
+		Module::<T>::deposit_event(Event::DocumentKeyStoreRequested(id, into_author_address(author), common_point, encrypted_point));
 
 		Ok(())
 	}
