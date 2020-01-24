@@ -114,6 +114,7 @@ impl<Block: BlockT> AuthoritySetForFinalityChecker<Block> for Arc<dyn FetchCheck
 			retry_count: None,
 		};
 
+let proof_check_result = 
 		self.check_read_proof(&request, proof)
 			.and_then(|results| {
 				let maybe_encoded = results.get(&storage_key)
@@ -130,6 +131,9 @@ impl<Block: BlockT> AuthoritySetForFinalityChecker<Block> for Arc<dyn FetchCheck
 					.map(|versioned| versioned.into())
 					.ok_or(ClientError::InvalidAuthoritiesSet)
 			})
+;
+println!("=== PROOF CHECK RESULT: {:?}", proof_check_result);
+proof_check_result
 	}
 }
 

@@ -290,6 +290,7 @@ fn do_import_block<B, C, Block: BlockT, J>(
 			);
 
 			// remember that we need finality proof for this block
+println!("=== REQUIRE FINALITY PROOF FOR BLOCK: {:?}", number);
 			imported_aux.needs_finality_proof = true;
 			data.consensus_changes.note_change((number, hash));
 			Ok(ImportResult::Imported(imported_aux))
@@ -321,6 +322,7 @@ fn do_import_finality_proof<B, C, Block: BlockT, J>(
 		J: ProvableJustification<Block::Header>,
 {
 	let authority_set_id = data.authority_set.set_id();
+println!("=== TRYING TO IMPORT FINALITY PROOF FOR BLOCK: {:?} SET: {:?}", _number, authority_set_id);
 	let authorities = data.authority_set.authorities();
 	let finality_effects = crate::finality_proof::check_finality_proof(
 		backend.blockchain(),
@@ -405,6 +407,7 @@ fn do_import_justification<B, C, Block: BlockT, J>(
 
 	// first, try to behave optimistically
 	let authority_set_id = data.authority_set.set_id();
+println!("=== TRYING TO IMPORT JUSTIFICATION FOR BLOCK: {:?} SET: {}", number, authority_set_id);
 	let justification = J::decode_and_verify(
 		&justification,
 		authority_set_id,
@@ -420,7 +423,7 @@ fn do_import_justification<B, C, Block: BlockT, J>(
 				"Justification for {} is not valid within current authorities set. Requesting finality proof.",
 				hash,
 			);
-
+println!("=== BADJUSTIFICATION: requesting finality proof");
 			let mut imported_aux = ImportedAux::default();
 			imported_aux.needs_finality_proof = true;
 			return Ok(ImportResult::Imported(imported_aux));
@@ -431,7 +434,7 @@ fn do_import_justification<B, C, Block: BlockT, J>(
 				"Justification for {} is not valid. Bailing.",
 				hash,
 			);
-
+println!("=== INVALIDJUSTIFICATION: bailing");
 			return Err(ConsensusError::ClientImport(e.to_string()).into());
 		},
 		Ok(justification) => {
@@ -440,7 +443,7 @@ fn do_import_justification<B, C, Block: BlockT, J>(
 				"Justification for {} is valid. Finalizing the block.",
 				hash,
 			);
-
+println!("=== OKJUSTIFICATION");
 			justification
 		},
 	};
@@ -465,6 +468,7 @@ fn do_finalize_block<B, C, Block: BlockT>(
 		B: Backend<Block> + 'static,
 		NumberFor<Block>: finality_grandpa::BlockNumberOps,
 {
+println!("=== FINALIZING BLOCK: {:?}", number);
 	// finalize the block
 	client.finalize_block(BlockId::Hash(hash), Some(justification), true).map_err(|e| {
 		warn!(target: "afg", "Error applying finality to block {:?}: {:?}", (hash, number), e);
