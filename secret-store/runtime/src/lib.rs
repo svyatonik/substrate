@@ -4,33 +4,32 @@ use sp_std::prelude::*;
 
 mod blockchain_storage;
 mod entity_id_storage;
-mod document_key_shadow_retrieval;
-mod document_key_storing;
+//mod document_key_shadow_retrieval;
+//mod document_key_storing;
 mod key_server_set;
 mod key_server_set_storage;
 mod mock;
-mod server_key_generation;
-mod server_key_retrieval;
-mod service;
+//mod server_key_generation;
+//mod server_key_retrieval;
+//mod service;
 mod utils;
 
 use frame_support::{StorageMap, traits::Currency, decl_module, decl_event, decl_storage, ensure};
 use frame_system::{self as system, ensure_signed};
 use ss_primitives::{
-	KeyServerId, EntityId, NetworkAddress,
-	ServerKeyId, ServerKeyPublic, Address,
-	key_server_set::{KeyServerSetSnapshot, MigrationId as MigrationIdT},
-	CommonPoint, EncryptedPoint,
-	service::{ServiceTask, ServiceResponse},
+	EntityId,
+	KeyServerId,
+	ServerKeyId,
+	key_server_set::{KeyServerSetSnapshot, KeyServerNetworkAddress, MigrationId as MigrationIdT},
 };
-use document_key_shadow_retrieval::{
+/*use document_key_shadow_retrieval::{
 	DocumentKeyShadowRetrievalRequest,
 	DocumentKeyShadowRetrievalPersonalData,
 	DocumentKeyShadowRetrievalService,
-};
-use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
-use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
-use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
+};*/
+//use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
+//use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
+//use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
 use key_server_set_storage::KeyServer;
 use utils::KeyServersMask;
 
@@ -88,12 +87,12 @@ decl_module! {
 		}
 
 		/// Add key server to the set.
-		pub fn add_key_server(origin, id: KeyServerId, network_address: NetworkAddress) {
+		pub fn add_key_server(origin, id: KeyServerId, network_address: KeyServerNetworkAddress) {
 			key_server_set::<T>().add_key_server(origin, id, network_address)?;
 		}
 
 		/// Update key server in the set.
-		pub fn update_key_server(origin, id: KeyServerId, network_address: NetworkAddress) {
+		pub fn update_key_server(origin, id: KeyServerId, network_address: KeyServerNetworkAddress) {
 			key_server_set::<T>().update_key_server(origin, id, network_address)?;
 		}
 
@@ -112,7 +111,7 @@ decl_module! {
 			key_server_set::<T>().confirm_migration(origin, migration_id)?;
 		}
 
-		/// Generate server key.
+/*		/// Generate server key.
 		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
 		}
@@ -126,7 +125,7 @@ decl_module! {
 					ServerKeyGenerationService::<T>::on_generation_error(origin, key_id)?,
 				_ => unimplemented!("TODO"),
 			}
-		}
+		}*/
 /*
 		/// Generate server key.
 		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
@@ -223,7 +222,10 @@ decl_event!(
 		MigrationStarted,
 		/// Key server set: migration has completed.
 		MigrationCompleted,
+	}
+);
 
+/*
 		/// 
 		ServerKeyGenerationRequested(ServerKeyId, Address, u8),
 		///
@@ -255,8 +257,7 @@ decl_event!(
 		DocumentKeyShadowRetrievalError(ServerKeyId, EntityId),
 		///
 		DocumentKeyPersonalRetrieved(ServerKeyId, EntityId, Vec<u8>, Vec<u8>),
-	}
-);
+*/
 
 decl_storage! {
 	trait Store for Module<T: Trait> as SecretStore {
@@ -272,7 +273,36 @@ decl_storage! {
 		NewKeyServers: linked_map KeyServerId => Option<KeyServer>;
 		MigrationId: Option<(MigrationIdT, KeyServerId)>;
 		MigrationConfirmations: map KeyServerId => ();
+	}
+	add_extra_genesis {
+		config(is_initialization_completed): bool;
+		config(key_servers): Vec<(KeyServerId, KeyServerNetworkAddress)>;
+		config(claims): Vec<(T::AccountId, EntityId)>;
+		build(|config| {
+			key_server_set::<T>()
+				.fill(
+					&config.key_servers,
+					config.is_initialization_completed,
+				).expect("invalid key servers set in configuration");
 
+			let mut claimed_by_accounts = std::collections::BTreeSet::new();
+			let mut claimed_entities = std::collections::BTreeSet::new();
+			for (account_id, entity_id) in &config.claims {
+				if !claimed_by_accounts.insert(account_id.clone()) {
+					panic!("Account has already claimed EntityId");
+				}
+				if !claimed_entities.insert(*entity_id) {
+					panic!("EntityId already claimed");
+				}
+
+				ClaimedId::<T>::insert(account_id.clone(), *entity_id);
+				ClaimedBy::<T>::insert(*entity_id, account_id.clone());
+			}
+		})
+	}
+}
+
+/*
 		pub ServerKeyGenerationFee get(server_key_generation_fee) config(): BalanceOf<T>;
 		ServerKeyGenerationRequestsKeys: Vec<ServerKeyId>;
 		ServerKeyGenerationRequests: map ServerKeyId
@@ -302,26 +332,14 @@ decl_storage! {
 		DocumentKeyShadowRetrievalPersonalResponses:
 			double_map (ServerKeyId, EntityId),
 			twox_128((KeyServersMask, Vec<u8>)) => DocumentKeyShadowRetrievalPersonalData;
-	}
-	add_extra_genesis {
-		config(is_initialization_completed): bool;
-		config(key_servers): Vec<(KeyServerId, NetworkAddress)>;
-		build(|config|
-			key_server_set::<T>()
-				.fill(
-					&config.key_servers,
-					config.is_initialization_completed,
-				).expect("invalid key servers set in configuration")
-		)
-	}
-}
+*/
 
 impl<T: Trait> Module<T> {
 	/// Get snapshot of key servers set state.
 	pub fn key_server_set_snapshot(key_server: KeyServerId) -> KeyServerSetSnapshot {
 		key_server_set::<T>().snapshot(key_server)
 	}
-
+/*
 	/// Return count of pending service tasks.
 	pub fn service_tasks_count() -> u32 {
 		unimplemented!()
@@ -345,7 +363,7 @@ impl<T: Trait> Module<T> {
 	/// Check if document key store response is required from given key server.
 	pub fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
 		DocumentKeyStoreService::<T>::is_response_required(key_server, key)
-	}
+	}*/
 }
 
 

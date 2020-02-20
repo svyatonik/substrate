@@ -22,7 +22,7 @@ use serde::{Serialize, Deserialize};
 use node_runtime::{
 	AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, ContractsConfig, CouncilConfig, DemocracyConfig,
 	GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
-	SystemConfig, TechnicalCommitteeConfig, WASM_BINARY,
+	SystemConfig, SecretStoreConfig, TechnicalCommitteeConfig, WASM_BINARY,
 };
 use node_runtime::Block;
 use node_runtime::constants::currency::*;
@@ -224,6 +224,8 @@ pub fn testnet_genesis(
 	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
 	const STASH: Balance = 100 * DOLLARS;
 
+	use std::str::FromStr;
+
 	GenesisConfig {
 		system: Some(SystemConfig {
 			code: WASM_BINARY.to_vec(),
@@ -292,7 +294,38 @@ pub fn testnet_genesis(
 		}),
 		pallet_membership_Instance1: Some(Default::default()),
 		pallet_treasury: Some(Default::default()),
-		substrate_secret_store_runtime: Some(Default::default()),
+		substrate_secret_store_runtime: Some(SecretStoreConfig {
+			owner: get_account_id_from_seed::<sr25519::Public>("Alice"),
+			is_initialization_completed: true,
+			key_servers: vec![
+				(
+					"1a642f0e3c3af545e7acbd38b07251b3990914f1".parse().unwrap(),
+					"127.0.0.1:10000".to_owned().into_bytes(),
+				),
+				(
+					"5050a4f4b3f9338c3472dcc01a87c76a144b3c9c".parse().unwrap(),
+					"127.0.0.1:10001".to_owned().into_bytes(),
+				),
+				(
+					"3325a78425f17a7e487eb5666b2bfd93abb06c70".parse().unwrap(),
+					"127.0.0.1:10002".to_owned().into_bytes(),
+				),
+			],
+			claims: vec![
+				(
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					"1a642f0e3c3af545e7acbd38b07251b3990914f1".parse().unwrap(),
+				),
+				(
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					"5050a4f4b3f9338c3472dcc01a87c76a144b3c9c".parse().unwrap(),
+				),
+				(
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					"3325a78425f17a7e487eb5666b2bfd93abb06c70".parse().unwrap(),
+				),
+			],
+		}),
 	}
 }
 

@@ -22,7 +22,7 @@ use sp_std::{
 	marker::PhantomData,
 	vec::Vec,
 };
-use ss_primitives::{KeyServerId, NetworkAddress, key_server_set::MigrationId as MigrationIdT};
+use ss_primitives::{KeyServerId, key_server_set::{MigrationId as MigrationIdT, KeyServerNetworkAddress}};
 use crate::{
 	Trait,
 	Owner, IsInitialized,
@@ -39,7 +39,7 @@ pub(crate) struct KeyServer {
 	/// Public key of key server.
 	pub id: KeyServerId,
 	/// Network address of the key server.
-	pub address: NetworkAddress,
+	pub address: KeyServerNetworkAddress,
 }
 
 /// The storage of single key server set.
@@ -72,13 +72,13 @@ pub(crate) trait Storage {
 	fn contains(&self, id: &KeyServerId) -> bool;
 	/// Append key server to the set. Should fail if the server is
 	/// already in the set.
-	fn append(&mut self, id: KeyServerId, address: NetworkAddress) -> Result<(), &'static str>;
+	fn append(&mut self, id: KeyServerId, address: KeyServerNetworkAddress) -> Result<(), &'static str>;
 	/// Remove key server from the set. Should fail if the server is not
 	/// in the set.
 	fn remove(&mut self, id: &KeyServerId) -> Result<(), &'static str>;
 	/// Update key server from the set. Should fail if the server is not
 	/// in the set or if the address is the same.
-	fn update(&mut self, id: &KeyServerId, address: NetworkAddress) -> Result<(), &'static str>;
+	fn update(&mut self, id: &KeyServerId, address: KeyServerNetworkAddress) -> Result<(), &'static str>;
 	/// 
 	fn fill_from(&mut self, key_servers: BTreeMap<KeyServerId, KeyServer>);
 	///
@@ -192,7 +192,7 @@ impl<M> Storage for RuntimeStorage<M> where
 		M::exists(id)
 	}
 
-	fn append(&mut self, id: KeyServerId, address: NetworkAddress) -> Result<(), &'static str> {
+	fn append(&mut self, id: KeyServerId, address: KeyServerNetworkAddress) -> Result<(), &'static str> {
 		let mut existing_servers_mask = KeyServersMask::default();
 		for (existing_id, existing_server) in M::enumerate() {
 			ensure!(
@@ -223,7 +223,7 @@ impl<M> Storage for RuntimeStorage<M> where
 		}
 	}
 
-	fn update(&mut self, id: &KeyServerId, address: NetworkAddress) -> Result<(), &'static str> {
+	fn update(&mut self, id: &KeyServerId, address: KeyServerNetworkAddress) -> Result<(), &'static str> {
 		self.ensure_contains(id)?;
 
 		M::mutate(id, |key_server| {

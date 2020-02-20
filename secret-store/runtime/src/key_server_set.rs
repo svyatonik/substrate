@@ -34,8 +34,8 @@
 
 use frame_support::ensure;
 use ss_primitives::{
-	KeyServerId, NetworkAddress,
-	key_server_set::{KeyServerSetSnapshot, KeyServerSetMigration, MigrationId},
+	KeyServerId,
+	key_server_set::{KeyServerSetSnapshot, KeyServerSetMigration, MigrationId, KeyServerNetworkAddress},
 };
 use crate::Event;
 use crate::blockchain_storage::Storage as BlockchainStorage;
@@ -64,7 +64,7 @@ impl<BS, ES, SS> KeyServerSetWithMigration<BS, ES, SS> where
 	/// This function should only be called once, during module initialization.
 	pub fn fill(
 		&mut self,
-		key_servers: &[(KeyServerId, NetworkAddress)],
+		key_servers: &[(KeyServerId, KeyServerNetworkAddress)],
 		is_initialization_completed: bool,
 	) -> Result<(), &'static str> {
 		self.server_set_storage.ensure_empty()?;
@@ -116,7 +116,7 @@ impl<BS, ES, SS> KeyServerSetWithMigration<BS, ES, SS> where
 		&mut self,
 		caller: ES::EntityId,
 		id: KeyServerId,
-		address: NetworkAddress,
+		address: KeyServerNetworkAddress,
 	) -> Result<(), &'static str> {
 		self.server_set_storage.ensure_can_modify(caller)?;
 
@@ -159,7 +159,7 @@ impl<BS, ES, SS> KeyServerSetWithMigration<BS, ES, SS> where
 		&mut self,
 		caller: ES::EntityId,
 		id: KeyServerId,
-		address: NetworkAddress,
+		address: KeyServerNetworkAddress,
 	) -> Result<(), &'static str> {
 		self.server_set_storage.ensure_can_modify(caller)?;
 

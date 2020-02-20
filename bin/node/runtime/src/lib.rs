@@ -725,23 +725,29 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl ss_primitives::acl_storage::AclStorageRuntimeApi<Block> for Runtime {
+	impl ss_primitives::acl_storage::SecretStoreAclApi<Block> for Runtime {
 		fn check(
-			_requester: ss_primitives::RequesterId,
-			_key: ss_primitives::ServerKeyId,
+			requester: ss_primitives::EntityId,
+			key: ss_primitives::ServerKeyId,
 		) -> bool {
-			true
+			// TODO: change to real impl
+			if key.as_ref()[31] % 2 == 0 {
+				true
+			} else {
+				false
+			}
 		}
 	}
 
-	impl ss_primitives::key_server_set::KeyServerSetWithMigrationRuntimeApi<Block> for Runtime {
+	impl ss_primitives::key_server_set::SecretStoreKeyServerSetApi<Block> for Runtime {
 		fn snapshot(
 			key_server: ss_primitives::KeyServerId,
 		) -> ss_primitives::key_server_set::KeyServerSetSnapshot {
 			SecretStore::key_server_set_snapshot(key_server)
 		}
 	}
-
+}
+/*
 	impl ss_primitives::service::ServiceRuntimeApi<Block> for Runtime {
 		fn pending_tasks_count() -> u32 {
 			SecretStore::service_tasks_count()
@@ -772,7 +778,8 @@ impl_runtime_apis! {
 			SecretStore::is_document_key_store_response_required(key_server, key)
 		}
 	}
-}
+
+*/
 
 #[cfg(test)]
 mod tests {

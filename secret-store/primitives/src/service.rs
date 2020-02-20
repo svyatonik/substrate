@@ -1,4 +1,4 @@
-use codec::{Encode, Decode};
+/*use codec::{Encode, Decode};
 use sp_std::vec::Vec;
 use crate::{
 	KeyServerId, ServerKeyId, RequesterId, CommonPoint,
@@ -45,7 +45,7 @@ pub enum ServiceResponse {
 
 sp_api::decl_runtime_apis! {
 	/// Service runtime API.
-	pub trait ServiceRuntimeApi {
+	pub trait SecretStoreServiceApi {
 		/// Return count of pending service tasks.
 		fn pending_tasks_count() -> u32;
 		/// Return pending task by index.
@@ -59,3 +59,4 @@ sp_api::decl_runtime_apis! {
 		fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool;
 	}
 }
+*/
