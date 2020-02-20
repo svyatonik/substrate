@@ -749,7 +749,7 @@ impl_runtime_apis! {
 
 	impl ss_primitives::service::SecretStoreServiceApi<Block> for Runtime {
 		fn server_key_generation_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
-			Vec::new() // TODO
+			SecretStore::server_key_generation_tasks(begin, end)
 		}
 
 		fn is_server_key_generation_response_required(key_server: ss_primitives::KeyServerId, key: ss_primitives::ServerKeyId) -> bool {

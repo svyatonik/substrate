@@ -343,7 +343,21 @@ impl<T: Trait> Module<T> {
 
 	///
 	pub fn server_key_generation_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
-		unimplemented!()
+		ServerKeyGenerationRequestsKeys::get()
+			.into_iter()
+			.skip(begin as usize)
+			.take(end.saturating_sub(begin) as usize)
+			.map(|key_id| {
+				let request = ServerKeyGenerationRequests::<T>::get(&key_id)
+					.expect("every key from ServerKeyGenerationRequestsKeys has corresponding
+						entry in ServerKeyGenerationRequests; qed");
+				ss_primitives::service::ServiceTask::GenerateServerKey(
+					key_id,
+					request.author,
+					request.threshold,
+				)
+			})
+			.collect()
 	}
 
 	///
