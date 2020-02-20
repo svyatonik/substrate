@@ -12,10 +12,10 @@ frame-support = { path = "../../frame/support", default-features = false }
 ss-primitives = { path = "../primitives", default-features = false }
 frame-system = { path = "../../frame/system", default-features = false }
 sp-io = { path = "../../primitives/io", default-features = false }
+sp-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
 sp-runtime = { path = "../../primitives/runtime", default-features = false }
-sp-core = { path = "../../primitives/core" }
 pallet-balances = { path = "../../frame/balances" }
 
 [features]
@@ -27,5 +27,6 @@ std = [
 	"frame-support/std",
 	"ss-primitives/std",
 	"frame-system/std",
-	"sp-io/std"
+	"sp-io/std",
+	"sp-core/std",
 ]

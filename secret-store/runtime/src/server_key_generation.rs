@@ -19,7 +19,7 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{EntityId, ServerKeyId, KeyServerId, ServerKeyPublic, into_author_address};
+use ss_primitives::{EntityId, ServerKeyId, KeyServerId};
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, /*RequestDetails, */SecretStoreService};
 use super::{
@@ -89,7 +89,7 @@ impl<T: Trait> ServerKeyGenerationService<T> {
 		ServerKeyGenerationRequestsKeys::append(sp_std::iter::once(&id))?;
 
 		// emit event
-		Module::<T>::deposit_event(Event::ServerKeyGenerationRequested(id, into_author_address(author), threshold));
+		Module::<T>::deposit_event(Event::ServerKeyGenerationRequested(id, author, threshold));
 
 		Ok(())
 	}
@@ -98,7 +98,7 @@ impl<T: Trait> ServerKeyGenerationService<T> {
 	pub fn on_generated(
 		origin: T::Origin,
 		id: ServerKeyId,
-		server_key_public: ServerKeyPublic,
+		server_key_public: sp_core::H512,
 	) -> Result<(), &'static str> {
 		// check if this request is active (the tx could arrive when request is already inactive)
 		let mut request = match ServerKeyGenerationRequests::<T>::get(id) {

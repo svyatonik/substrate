@@ -9,9 +9,9 @@ mod entity_id_storage;
 mod key_server_set;
 mod key_server_set_storage;
 mod mock;
-//mod server_key_generation;
+mod server_key_generation;
 //mod server_key_retrieval;
-//mod service;
+mod service;
 mod utils;
 
 use frame_support::{StorageMap, traits::Currency, decl_module, decl_event, decl_storage, ensure};
@@ -28,7 +28,7 @@ use ss_primitives::{
 	DocumentKeyShadowRetrievalService,
 };*/
 //use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
-//use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
+use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
 //use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
 use key_server_set_storage::KeyServer;
 use utils::KeyServersMask;
@@ -111,12 +111,12 @@ decl_module! {
 			key_server_set::<T>().confirm_migration(origin, migration_id)?;
 		}
 
-/*		/// Generate server key.
+		/// Generate server key.
 		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
 		}
 
-		/// Publish key server response for service request.
+/*		/// Publish key server response for service request.
 		pub fn service_response(origin, response: ServiceResponse) {
 			match response {
 				ServiceResponse::ServerKeyGenerated(key_id, key) =>
@@ -125,8 +125,8 @@ decl_module! {
 					ServerKeyGenerationService::<T>::on_generation_error(origin, key_id)?,
 				_ => unimplemented!("TODO"),
 			}
-		}*/
-/*
+		}
+
 		/// Generate server key.
 		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
@@ -222,17 +222,17 @@ decl_event!(
 		MigrationStarted,
 		/// Key server set: migration has completed.
 		MigrationCompleted,
+
+		/// 
+		ServerKeyGenerationRequested(ServerKeyId, EntityId, u8),
+		///
+		ServerKeyGenerated(ServerKeyId, sp_core::H512),
+		///
+		ServerKeyGenerationError(ServerKeyId),
 	}
 );
 
 /*
-		/// 
-		ServerKeyGenerationRequested(ServerKeyId, Address, u8),
-		///
-		ServerKeyGenerated(ServerKeyId, ServerKeyPublic),
-		///
-		ServerKeyGenerationError(ServerKeyId),
-
 		/// 
 		ServerKeyRetrievalRequested(ServerKeyId),
 		///
@@ -273,6 +273,12 @@ decl_storage! {
 		NewKeyServers: linked_map KeyServerId => Option<KeyServer>;
 		MigrationId: Option<(MigrationIdT, KeyServerId)>;
 		MigrationConfirmations: map KeyServerId => ();
+
+		pub ServerKeyGenerationFee get(server_key_generation_fee) config(): BalanceOf<T>;
+		ServerKeyGenerationRequestsKeys: Vec<ServerKeyId>;
+		ServerKeyGenerationRequests: map ServerKeyId
+			=> Option<ServerKeyGenerationRequest<<T as frame_system::Trait>::BlockNumber>>;
+		ServerKeyGenerationResponses: double_map ServerKeyId, twox_128(sp_core::H512) => u8;
 	}
 	add_extra_genesis {
 		config(is_initialization_completed): bool;
@@ -303,11 +309,6 @@ decl_storage! {
 }
 
 /*
-		pub ServerKeyGenerationFee get(server_key_generation_fee) config(): BalanceOf<T>;
-		ServerKeyGenerationRequestsKeys: Vec<ServerKeyId>;
-		ServerKeyGenerationRequests: map ServerKeyId
-			=> Option<ServerKeyGenerationRequest<<T as frame_system::Trait>::BlockNumber>>;
-		ServerKeyGenerationResponses: double_map ServerKeyId, twox_128(ServerKeyPublic) => u8;
 
 		pub ServerKeyRetrievalFee get(server_key_retrieval_fee) config(): BalanceOf<T>;
 		ServerKeyRetrievalRequestsKeys: Vec<ServerKeyId>;
@@ -339,6 +340,17 @@ impl<T: Trait> Module<T> {
 	pub fn key_server_set_snapshot(key_server: KeyServerId) -> KeyServerSetSnapshot {
 		key_server_set::<T>().snapshot(key_server)
 	}
+
+	///
+	pub fn server_key_generation_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+		unimplemented!()
+	}
+
+	///
+	pub fn is_server_key_generation_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
+		ServerKeyGenerationService::<T>::is_response_required(key_server, key)
+	}
+
 /*
 	/// Return count of pending service tasks.
 	pub fn service_tasks_count() -> u32 {

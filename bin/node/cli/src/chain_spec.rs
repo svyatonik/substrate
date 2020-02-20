@@ -325,6 +325,7 @@ pub fn testnet_genesis(
 					"3325a78425f17a7e487eb5666b2bfd93abb06c70".parse().unwrap(),
 				),
 			],
+			server_key_generation_fee: 0,
 		}),
 	}
 }

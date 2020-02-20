@@ -746,6 +746,17 @@ impl_runtime_apis! {
 			SecretStore::key_server_set_snapshot(key_server)
 		}
 	}
+
+	impl ss_primitives::service::SecretStoreServiceApi<Block> for Runtime {
+		fn server_key_generation_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+			Vec::new() // TODO
+		}
+
+		fn is_server_key_generation_response_required(key_server: ss_primitives::KeyServerId, key: ss_primitives::ServerKeyId) -> bool {
+			true // TODO
+		}
+	}
+
 }
 /*
 	impl ss_primitives::service::ServiceRuntimeApi<Block> for Runtime {
