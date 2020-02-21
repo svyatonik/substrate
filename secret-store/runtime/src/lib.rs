@@ -116,6 +116,16 @@ decl_module! {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
 		}
 
+		/// Called when generation is reported by key server.
+		pub fn server_key_generated(origin, id: ServerKeyId, server_key_public: sp_core::H512) {
+			ServerKeyGenerationService::<T>::on_generated(origin, id, server_key_public)?;
+		}
+
+		/// Called when generation error is reported by key server.
+		pub fn server_key_generation_error(origin, id: ServerKeyId) {
+			ServerKeyGenerationService::<T>::on_generation_error(origin, id)?;
+		}
+
 /*		/// Publish key server response for service request.
 		pub fn service_response(origin, response: ServiceResponse) {
 			match response {
@@ -130,16 +140,6 @@ decl_module! {
 		/// Generate server key.
 		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
-		}
-
-		/// Called when generation is reported by key server.
-		pub fn server_key_generated(origin, id: ServerKeyId, server_key_public: ServerKeyPublic) {
-			ServerKeyGenerationService::<T>::on_generated(origin, id, server_key_public)?;
-		}
-
-		/// Called when generation error is reported by key server.
-		pub fn server_key_generation_error(origin, id: ServerKeyId) {
-			ServerKeyGenerationService::<T>::on_generation_error(origin, id)?;
 		}
 
 		/// Retrieve server key.
