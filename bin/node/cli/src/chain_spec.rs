@@ -324,6 +324,10 @@ pub fn testnet_genesis(
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					"3325a78425f17a7e487eb5666b2bfd93abb06c70".parse().unwrap(),
 				),
+				(
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					"c48b812bb43401392c037381aca934f4069c0517".parse().unwrap(),
+				),
 			],
 			server_key_generation_fee: 0,
 			server_key_retrieval_fee: 0,
