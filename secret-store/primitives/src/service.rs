@@ -11,9 +11,9 @@ pub enum ServiceTask {
 	GenerateServerKey(ServerKeyId, EntityId, u8),
 	/// Retrieve server key (server_key_id).
 	RetrieveServerKey(ServerKeyId),
-/*	/// Store document key (server_key_id, author, common_point, encrypted_point).
-	StoreDocumentKey(ServerKeyId, RequesterId, CommonPoint, EncryptedPoint),
-	/// Retrieve common data of document key (server_key_id, requester).
+	/// Store document key (server_key_id, author, common_point, encrypted_point).
+	StoreDocumentKey(ServerKeyId, EntityId, sp_core::H512, sp_core::H512),
+/*	/// Retrieve common data of document key (server_key_id, requester).
 	RetrieveShadowDocumentKeyCommon(ServerKeyId, RequesterId),
 	/// Retrieve personal data of document key (server_key_id, requester).
 	RetrieveShadowDocumentKeyPersonal(ServerKeyId, RequesterId),*/
@@ -31,6 +31,11 @@ sp_api::decl_runtime_apis! {
 		fn server_key_retrieval_tasks(begin: u32, end: u32) -> Vec<ServiceTask>;
 		/// Check if server key retrieval response is required from given key server.
 		fn is_server_key_retrieval_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool;
+
+		///
+		fn document_key_store_tasks(begin: u32, end: u32) -> Vec<ServiceTask>;
+		/// Check if server key retrieval response is required from given key server.
+		fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool;
 	}
 }
 /*

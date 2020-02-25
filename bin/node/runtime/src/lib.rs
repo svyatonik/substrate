@@ -763,6 +763,14 @@ impl_runtime_apis! {
 		fn is_server_key_retrieval_response_required(key_server: ss_primitives::KeyServerId, key_id: ss_primitives::ServerKeyId) -> bool {
 			SecretStore::is_server_key_retrieval_response_required(key_server, key_id)
 		}
+
+		fn document_key_store_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+			SecretStore::document_key_store_tasks(begin, end)
+		}
+
+		fn is_document_key_store_response_required(key_server: ss_primitives::KeyServerId, key_id: ss_primitives::ServerKeyId) -> bool {
+			SecretStore::is_document_key_store_response_required(key_server, key_id)
+		}
 	}
 
 }

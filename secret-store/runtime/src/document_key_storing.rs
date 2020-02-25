@@ -19,7 +19,7 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{EntityId, ServerKeyId, KeyServerId, CommonPoint, EncryptedPoint, into_author_address};
+use ss_primitives::{EntityId, ServerKeyId, KeyServerId};
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, SecretStoreService};
 use super::{
@@ -40,9 +40,9 @@ pub struct DocumentKeyStoreRequest<Number> {
 	/// server key generation request.
 	pub author: EntityId,
 	/// Common point of the document key.
-	pub common_point: CommonPoint,
+	pub common_point: sp_core::H512,
 	/// Encrypted point of the document key.
-	pub encrypted_point: EncryptedPoint,
+	pub encrypted_point: sp_core::H512,
 	/// Responses metadata.
 	pub responses: Responses<Number>,
 }
@@ -55,8 +55,8 @@ impl<T: Trait> DocumentKeyStoreService<T> {
 	pub fn store(
 		origin: T::Origin,
 		id: ServerKeyId,
-		common_point: CommonPoint,
-		encrypted_point: EncryptedPoint,
+		common_point: sp_core::H512,
+		encrypted_point: sp_core::H512,
 	) -> Result<(), &'static str> {
 		// limit number of requests in the queue
 		ensure!(
@@ -87,7 +87,7 @@ impl<T: Trait> DocumentKeyStoreService<T> {
 		DocumentKeyStoreRequestsKeys::append(sp_std::iter::once(&id))?;
 
 		// emit event
-		Module::<T>::deposit_event(Event::DocumentKeyStoreRequested(id, into_author_address(author), common_point, encrypted_point));
+		Module::<T>::deposit_event(Event::DocumentKeyStoreRequested(id, author, common_point, encrypted_point));
 
 		Ok(())
 	}
