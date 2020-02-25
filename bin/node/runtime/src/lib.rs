@@ -752,8 +752,16 @@ impl_runtime_apis! {
 			SecretStore::server_key_generation_tasks(begin, end)
 		}
 
-		fn is_server_key_generation_response_required(key_server: ss_primitives::KeyServerId, key: ss_primitives::ServerKeyId) -> bool {
-			true // TODO
+		fn is_server_key_generation_response_required(key_server: ss_primitives::KeyServerId, key_id: ss_primitives::ServerKeyId) -> bool {
+			SecretStore::is_server_key_generation_response_required(key_server, key_id)
+		}
+
+		fn server_key_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+			SecretStore::server_key_retrieval_tasks(begin, end)
+		}
+
+		fn is_server_key_retrieval_response_required(key_server: ss_primitives::KeyServerId, key_id: ss_primitives::ServerKeyId) -> bool {
+			SecretStore::is_server_key_retrieval_response_required(key_server, key_id)
 		}
 	}
 

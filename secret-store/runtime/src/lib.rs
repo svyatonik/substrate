@@ -10,7 +10,7 @@ mod key_server_set;
 mod key_server_set_storage;
 mod mock;
 mod server_key_generation;
-//mod server_key_retrieval;
+mod server_key_retrieval;
 mod service;
 mod utils;
 
@@ -29,7 +29,7 @@ use ss_primitives::{
 };*/
 //use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
 use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
-//use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
+use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
 use key_server_set_storage::KeyServer;
 use utils::KeyServersMask;
 
@@ -126,6 +126,21 @@ decl_module! {
 			ServerKeyGenerationService::<T>::on_generation_error(origin, id)?;
 		}
 
+		/// Retrieve server key.
+		pub fn retrieve_server_key(origin, id: ServerKeyId) {
+			ServerKeyRetrievalService::<T>::retrieve(origin, id)?;
+		}
+
+		/// Called when generation is reported by key server.
+		pub fn server_key_retrieved(origin, id: ServerKeyId, server_key_public: sp_core::H512, threshold: u8) {
+			ServerKeyRetrievalService::<T>::on_retrieved(origin, id, server_key_public, threshold)?;
+		}
+
+		/// Called when generation error is reported by key server.
+		pub fn server_key_retrieval_error(origin, id: ServerKeyId) {
+			ServerKeyRetrievalService::<T>::on_retrieval_error(origin, id)?;
+		}
+
 /*		/// Publish key server response for service request.
 		pub fn service_response(origin, response: ServiceResponse) {
 			match response {
@@ -142,20 +157,6 @@ decl_module! {
 			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
 		}
 
-		/// Retrieve server key.
-		pub fn retrieve_server_key(origin, id: ServerKeyId) {
-			ServerKeyRetrievalService::<T>::retrieve(origin, id)?;
-		}
-
-		/// Called when generation is reported by key server.
-		pub fn server_key_retrieved(origin, id: ServerKeyId, server_key_public: ServerKeyPublic, threshold: u8) {
-			ServerKeyRetrievalService::<T>::on_retrieved(origin, id, server_key_public, threshold)?;
-		}
-
-		/// Called when generation error is reported by key server.
-		pub fn server_key_retrieval_error(origin, id: ServerKeyId) {
-			ServerKeyRetrievalService::<T>::on_retrieval_error(origin, id)?;
-		}
 
 		/// Store document key.
 		pub fn store_document_key(origin, id: ServerKeyId, common_point: CommonPoint, encrypted_point: EncryptedPoint) {
@@ -229,16 +230,17 @@ decl_event!(
 		ServerKeyGenerated(ServerKeyId, sp_core::H512),
 		///
 		ServerKeyGenerationError(ServerKeyId),
+
+		/// 
+		ServerKeyRetrievalRequested(ServerKeyId),
+		///
+		ServerKeyRetrieved(ServerKeyId, sp_core::H512),
+		///
+		ServerKeyRetrievalError(ServerKeyId),
 	}
 );
 
 /*
-		/// 
-		ServerKeyRetrievalRequested(ServerKeyId),
-		///
-		ServerKeyRetrieved(ServerKeyId, ServerKeyPublic),
-		///
-		ServerKeyRetrievalError(ServerKeyId),
 
 		///
 		DocumentKeyStoreRequested(ServerKeyId, Address, CommonPoint, EncryptedPoint),
@@ -279,6 +281,13 @@ decl_storage! {
 		ServerKeyGenerationRequests: map ServerKeyId
 			=> Option<ServerKeyGenerationRequest<<T as frame_system::Trait>::BlockNumber>>;
 		ServerKeyGenerationResponses: double_map ServerKeyId, twox_128(sp_core::H512) => u8;
+
+		pub ServerKeyRetrievalFee get(server_key_retrieval_fee) config(): BalanceOf<T>;
+		ServerKeyRetrievalRequestsKeys: Vec<ServerKeyId>;
+		ServerKeyRetrievalRequests: map ServerKeyId
+			=> Option<ServerKeyRetrievalRequest<<T as frame_system::Trait>::BlockNumber>>;
+		ServerKeyRetrievalResponses: double_map ServerKeyId, twox_128(sp_core::H512) => u8;
+		ServerKeyRetrievalThresholdResponses: double_map ServerKeyId, twox_128(u8) => u8;
 	}
 	add_extra_genesis {
 		config(is_initialization_completed): bool;
@@ -310,12 +319,6 @@ decl_storage! {
 
 /*
 
-		pub ServerKeyRetrievalFee get(server_key_retrieval_fee) config(): BalanceOf<T>;
-		ServerKeyRetrievalRequestsKeys: Vec<ServerKeyId>;
-		ServerKeyRetrievalRequests: map ServerKeyId
-			=> Option<ServerKeyRetrievalRequest<<T as frame_system::Trait>::BlockNumber>>;
-		ServerKeyRetrievalResponses: double_map ServerKeyId, twox_128(ServerKeyPublic) => u8;
-		ServerKeyRetrievalThresholdResponses: double_map ServerKeyId, twox_128(u8) => u8;
 
 		pub DocumentKeyStoreFee get(document_key_store_fee) config(): BalanceOf<T>;
 		DocumentKeyStoreRequestsKeys: Vec<ServerKeyId>;
@@ -361,8 +364,27 @@ impl<T: Trait> Module<T> {
 	}
 
 	///
-	pub fn is_server_key_generation_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
-		ServerKeyGenerationService::<T>::is_response_required(key_server, key)
+	pub fn is_server_key_generation_response_required(key_server: KeyServerId, key_id: ServerKeyId) -> bool {
+		ServerKeyGenerationService::<T>::is_response_required(key_server, key_id)
+	}
+
+	///
+	pub fn server_key_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+		ServerKeyRetrievalRequestsKeys::get()
+			.into_iter()
+			.skip(begin as usize)
+			.take(end.saturating_sub(begin) as usize)
+			.map(|key_id| {
+				ss_primitives::service::ServiceTask::RetrieveServerKey(
+					key_id,
+				)
+			})
+			.collect()
+	}
+
+	///
+	pub fn is_server_key_retrieval_response_required(key_server: KeyServerId, key_id: ServerKeyId) -> bool {
+		ServerKeyRetrievalService::<T>::is_response_required(key_server, key_id)
 	}
 
 /*

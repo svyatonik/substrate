@@ -19,7 +19,7 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{KeyServerId, ServerKeyId, ServerKeyPublic};
+use ss_primitives::{KeyServerId, ServerKeyId};
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, SecretStoreService};
 use super::{
@@ -43,7 +43,7 @@ pub struct ServerKeyRetrievalRequest<Number> {
 	/// Responses metadata.
 	pub responses: Responses<Number>,
 	/// Retrieved server key public with max support.
-	pub server_key_with_max_threshold: ServerKeyPublic,
+	pub server_key_with_max_threshold: sp_core::H512,
 }
 
 /// Implementation of server key retrieval service.
@@ -96,7 +96,7 @@ impl<T: Trait> ServerKeyRetrievalService<T> {
 	pub fn on_retrieved(
 		origin: T::Origin,
 		id: ServerKeyId,
-		server_key_public: ServerKeyPublic,
+		server_key_public: sp_core::H512,
 		threshold: u8,
 	) -> Result<(), &'static str> {
 		// check if this request is active (the tx could arrive when request is already inactive)
@@ -195,12 +195,12 @@ impl<T: Trait> ServerKeyRetrievalService<T> {
 		origin: T::Origin,
 		id: ServerKeyId,
 		mut request: ServerKeyRetrievalRequest<<T as frame_system::Trait>::BlockNumber>,
-		server_key_public: ServerKeyPublic,
+		server_key_public: sp_core::H512,
 		threshold: u8,
 	) -> Result<(
 		ServerKeyRetrievalRequest<<T as frame_system::Trait>::BlockNumber>,
 		ResponseSupport,
-		ServerKeyPublic
+		sp_core::H512
 	), &'static str> {
 		// insert threshold response
 		let key_servers_count = SecretStoreService::<T>::key_servers_count()?;
