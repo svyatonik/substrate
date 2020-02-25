@@ -141,6 +141,21 @@ decl_module! {
 			ServerKeyRetrievalService::<T>::on_retrieval_error(origin, id)?;
 		}
 
+		/// Store document key.
+		pub fn store_document_key(origin, id: ServerKeyId, common_point: sp_core::H512, encrypted_point: sp_core::H512) {
+			DocumentKeyStoreService::<T>::store(origin, id, common_point, encrypted_point)?;
+		}
+
+		/// Called when store is reported by key server.
+		pub fn document_key_stored(origin, id: ServerKeyId) {
+			DocumentKeyStoreService::<T>::on_stored(origin, id)?;
+		}
+
+		/// Called when store error is reported by key server.
+		pub fn document_key_store_error(origin, id: ServerKeyId) {
+			DocumentKeyStoreService::<T>::on_store_error(origin, id)?;
+		}
+
 /*		/// Publish key server response for service request.
 		pub fn service_response(origin, response: ServiceResponse) {
 			match response {
@@ -158,20 +173,7 @@ decl_module! {
 		}
 
 
-		/// Store document key.
-		pub fn store_document_key(origin, id: ServerKeyId, common_point: CommonPoint, encrypted_point: EncryptedPoint) {
-			DocumentKeyStoreService::<T>::store(origin, id, common_point, encrypted_point)?;
-		}
-
-		/// Called when store is reported by key server.
-		pub fn document_key_stored(origin, id: ServerKeyId) {
-			DocumentKeyStoreService::<T>::on_stored(origin, id)?;
-		}
-
-		/// Called when store error is reported by key server.
-		pub fn document_key_store_error(origin, id: ServerKeyId) {
-			DocumentKeyStoreService::<T>::on_store_error(origin, id)?;
-		}*/
+*/
 /*
 		/// Allow key operations for given requester.
 		pub fn grant_key_access(origin, key: ServerKeyId, requester: Address) {
