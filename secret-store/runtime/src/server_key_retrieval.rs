@@ -270,13 +270,13 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that event has been emitted
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalRequested([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalRequested([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -288,7 +288,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER2),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -300,14 +300,14 @@ mod tests {
 			for i in 0..MAX_REQUESTS {
 				ServerKeyRetrievalService::<TestRuntime>::retrieve(
 					Origin::signed(REQUESTER1),
-					[i as u8; 32],
+					[i as u8; 32].into(),
 				).unwrap();
 			}
 
 			// and now try to push new request so that there will be more than a limit requests
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[MAX_REQUESTS as u8; 32],
+				[MAX_REQUESTS as u8; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -318,13 +318,13 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -335,7 +335,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -344,14 +344,14 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			assert_eq!(
@@ -360,8 +360,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
@@ -372,7 +372,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 		});
@@ -384,7 +384,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -396,26 +396,26 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![43], // 'wrong' value
+				[32; 32].into(),
+				[43; 64].into(), // 'wrong' value
 				3,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			assert_eq!(
@@ -424,8 +424,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER4),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 
@@ -436,7 +436,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 		});
@@ -448,7 +448,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -460,20 +460,20 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				10, // 'wrong' threshold
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			assert_eq!(
@@ -482,8 +482,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 
@@ -494,7 +494,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 		});
@@ -506,7 +506,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -518,14 +518,14 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			assert_eq!(
@@ -534,8 +534,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![43], // 'wrong' value
+				[32; 32].into(),
+				[43; 64].into(), // 'wrong' value
 				1,
 			).unwrap();
 
@@ -546,7 +546,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 		});
@@ -558,7 +558,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value
@@ -566,20 +566,20 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
@@ -597,7 +597,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -609,14 +609,14 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![43],
+				[32; 32].into(),
+				[43; 64].into(),
 				3,
 			).unwrap();
 			assert_eq!(
@@ -625,8 +625,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![44],
+				[32; 32].into(),
+				[44; 64].into(),
 				3,
 			).unwrap();
 
@@ -637,7 +637,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -649,7 +649,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -662,20 +662,20 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				2,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![43],
+				[32; 32].into(),
+				[43; 64].into(),
 				2,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![44],
+				[32; 32].into(),
+				[44; 64].into(),
 				2,
 			).unwrap();
 			assert_eq!(
@@ -684,8 +684,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				vec![45],
+				[32; 32].into(),
+				[45; 64].into(),
 				2,
 			).unwrap();
 
@@ -696,7 +696,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -708,7 +708,7 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// 3-of-5 servers are required to respond with the same threshold value:
@@ -721,20 +721,20 @@ mod tests {
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				2,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 			assert_eq!(
@@ -743,8 +743,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				4,
 			).unwrap();
 
@@ -755,7 +755,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -766,8 +766,8 @@ mod tests {
 		default_initialization_with_five_servers().execute_with(|| {
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 		});
@@ -778,7 +778,7 @@ mod tests {
 		default_initialization_with_five_servers().execute_with(|| {
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 		});
 	}
@@ -789,13 +789,13 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap_err();
 		});
@@ -807,12 +807,12 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -823,18 +823,18 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// receive errors from 3-of-5 servers (> 50%)
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			assert_eq!(
 				events_count,
@@ -842,7 +842,7 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that event has been emitted
@@ -852,7 +852,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -864,29 +864,29 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			assert_eq!(
 				events_count,
@@ -894,8 +894,8 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER4),
-				[32; 32],
-				vec![43],
+				[32; 32].into(),
+				[43; 64].into(),
 				1,
 			).unwrap();
 
@@ -906,7 +906,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyRetrieved([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 		});
@@ -918,25 +918,25 @@ mod tests {
 			// ask to retrieve server key
 			ServerKeyRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				4,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 				4,
 			).unwrap();
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			// possible optimization:
 			// at this moment we already have (4-threshold support of 2) and (256-threshold support of 1)
@@ -944,7 +944,7 @@ mod tests {
 			// upon public because 1 node has failed to agree
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			assert_eq!(
 				events_count,
@@ -952,7 +952,7 @@ mod tests {
 			);
 			ServerKeyRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER4),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that event has been emitted
@@ -962,7 +962,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyRetrievalError([32; 32].into()).into())
 					.is_some(),
 			);
 		});

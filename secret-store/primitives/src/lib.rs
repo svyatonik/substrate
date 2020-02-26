@@ -1,7 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::Vec;
-
 pub mod acl_storage;
 pub mod key_server_set;
 pub mod service;

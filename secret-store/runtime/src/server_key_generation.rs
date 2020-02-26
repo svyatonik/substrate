@@ -199,7 +199,7 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 
@@ -207,8 +207,8 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::ServerKeyGenerationRequested(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
 						1,
 					).into())
 					.is_some(),
@@ -222,7 +222,7 @@ mod tests {
 			// REQUESTER2 has no enough funds
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER2),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap_err();
 		});
@@ -234,7 +234,7 @@ mod tests {
 			// there are only two key servers => max threshold is 1
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				2,
 			).unwrap_err();
 		});
@@ -247,7 +247,7 @@ mod tests {
 			for i in 0..MAX_REQUESTS {
 				ServerKeyGenerationService::<TestRuntime>::generate(
 					Origin::signed(REQUESTER1),
-					[i as u8; 32],
+					[i as u8; 32].into(),
 					1,
 				).unwrap();
 			}
@@ -255,7 +255,7 @@ mod tests {
 			// and now try to push new request so that there will be more than a limit requests
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[MAX_REQUESTS as u8; 32],
+				[MAX_REQUESTS as u8; 32].into(),
 				1,
 			).unwrap_err();
 		});
@@ -267,14 +267,14 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap_err();
 		});
@@ -286,7 +286,7 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -294,8 +294,8 @@ mod tests {
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 			// => no new events generated
 			assert_eq!(
@@ -306,8 +306,8 @@ mod tests {
 			// response from key server 2 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 			// => new event is generated
 			assert_eq!(
@@ -316,15 +316,15 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyGenerated([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::ServerKeyGenerated([32; 32].into(), [42; 64].into()).into())
 					.is_some(),
 			);
 
 			// and then another response from key server 2 is received (and ignored without error)
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 		});
 	}
@@ -335,15 +335,15 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				0,
 			).unwrap();
 
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -354,7 +354,7 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -362,15 +362,15 @@ mod tests {
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// another response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// check that key is not published
@@ -387,7 +387,7 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -395,15 +395,15 @@ mod tests {
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// response from key server 2 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![43],
+				[32; 32].into(),
+				[43; 64].into(),
 			).unwrap();
 
 			// check that generation error is published
@@ -413,7 +413,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -425,7 +425,7 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -433,22 +433,22 @@ mod tests {
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// response from key server 2 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// and wron response from key server 3 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generated(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				vec![43],
+				[32; 32].into(),
+				[43; 64].into(),
 			).unwrap();
 
 			// check that generation error is published
@@ -458,7 +458,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -470,20 +470,20 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				1,
 			).unwrap();
 
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generation_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that generation error is published
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -495,20 +495,20 @@ mod tests {
 			// ask to generate server key
 			ServerKeyGenerationService::<TestRuntime>::generate(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 				0,
 			).unwrap();
 
 			// response from key server 1 is received
 			ServerKeyGenerationService::<TestRuntime>::on_generation_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that generation error is published
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32]).into())
+					.find(|e| e.event == Event::ServerKeyGenerationError([32; 32].into()).into())
 					.is_some(),
 			);
 		});

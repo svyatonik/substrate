@@ -13,10 +13,10 @@ pub enum ServiceTask {
 	RetrieveServerKey(ServerKeyId),
 	/// Store document key (server_key_id, author, common_point, encrypted_point).
 	StoreDocumentKey(ServerKeyId, EntityId, sp_core::H512, sp_core::H512),
-/*	/// Retrieve common data of document key (server_key_id, requester).
-	RetrieveShadowDocumentKeyCommon(ServerKeyId, RequesterId),
+	/// Retrieve common data of document key (server_key_id, requester).
+	RetrieveShadowDocumentKeyCommon(ServerKeyId, EntityId),
 	/// Retrieve personal data of document key (server_key_id, requester).
-	RetrieveShadowDocumentKeyPersonal(ServerKeyId, RequesterId),*/
+	RetrieveShadowDocumentKeyPersonal(ServerKeyId, sp_core::H512),
 }
 
 sp_api::decl_runtime_apis! {

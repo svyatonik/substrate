@@ -1,5 +1,6 @@
 use codec::{Decode, Encode};
 use sp_core::H256;
+use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 use crate::KeyServerId;
 
@@ -10,7 +11,7 @@ pub type MigrationId = H256;
 pub type KeyServerNetworkAddress = Vec<u8>;
 
 /// Key server set snapshot.
-#[derive(Decode, Encode, PartialEq)]
+#[derive(Decode, Encode, PartialEq, RuntimeDebug)]
 pub struct KeyServerSetSnapshot {
 	/// Current set of key servers.
 	pub current_set: Vec<(KeyServerId, KeyServerNetworkAddress)>,
@@ -21,7 +22,7 @@ pub struct KeyServerSetSnapshot {
 }
 
 /// Key server set migration.
-#[derive(Decode, Encode, PartialEq)]
+#[derive(Decode, Encode, PartialEq, RuntimeDebug)]
 pub struct KeyServerSetMigration {
 	/// Migration id.
 	pub id: MigrationId,

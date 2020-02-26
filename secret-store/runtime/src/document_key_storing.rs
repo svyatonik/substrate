@@ -190,19 +190,19 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// check that event has been emitted
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyStoreRequested(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
-						vec![21],
-						vec![42],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
+						[21; 64].into(),
+						[42; 64].into(),
 					).into())
 					.is_some(),
 			);
@@ -215,9 +215,9 @@ mod tests {
 			// REQUESTER2 has no enough funds
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER2),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -229,18 +229,18 @@ mod tests {
 			for i in 0..MAX_REQUESTS {
 				DocumentKeyStoreService::<TestRuntime>::store(
 					Origin::signed(REQUESTER1),
-					[i as u8; 32],
-					vec![21],
-					vec![42],
+					[i as u8; 32].into(),
+					[21; 64].into(),
+					[42; 64].into(),
 				).unwrap();
 			}
 
 			// and now try to push new request so that there will be more than a limit requests
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[MAX_REQUESTS as u8; 32],
-				vec![21],
-				vec![42],
+				[MAX_REQUESTS as u8; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -251,17 +251,17 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -272,16 +272,16 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 
 			// response from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			// => no new events generated
 			assert_eq!(
@@ -292,7 +292,7 @@ mod tests {
 			// response from key server 2 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 			// => new event is generated
 			assert_eq!(
@@ -301,14 +301,14 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::DocumentKeyStored([32; 32]).into())
+					.find(|e| e.event == Event::DocumentKeyStored([32; 32].into()).into())
 					.is_some(),
 			);
 
 			// and then another response from key server 2 is received (and ignored without error)
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 		});
 	}
@@ -319,15 +319,15 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// response from key server 3 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -338,22 +338,22 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 
 			// response from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// another response from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that key is not published
@@ -370,16 +370,16 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 
 			// error from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_store_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// check that store error is published
@@ -389,7 +389,7 @@ mod tests {
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::DocumentKeyStoreError([32; 32]).into())
+					.find(|e| e.event == Event::DocumentKeyStoreError([32; 32].into()).into())
 					.is_some(),
 			);
 		});
@@ -401,15 +401,15 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// error from REQUESTER1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_store_error(
 				Origin::signed(REQUESTER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -420,7 +420,7 @@ mod tests {
 			// error from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_store_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			assert_eq!(
@@ -436,34 +436,52 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// response from all key servers is required
-			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER0_ID, [32; 32]));
-			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER1_ID, [32; 32]));
+			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+			));
+			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER1_ID.into(),
+				[32; 32].into(),
+			));
 
 			// response from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// response from key server 2 is required
-			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER0_ID, [32; 32]));
-			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER1_ID, [32; 32]));
+			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+			));
+			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER1_ID.into(),
+				[32; 32].into(),
+			));
 
 			// response from key server 2 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// no responses are required
-			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER0_ID, [32; 32]));
-			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER1_ID, [32; 32]));
+			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+			));
+			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER1_ID.into(),
+				[32; 32].into(),
+			));
 		});
 	}
 
@@ -473,19 +491,22 @@ mod tests {
 			// ask to store document key
 			DocumentKeyStoreService::<TestRuntime>::store(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![21],
-				vec![42],
+				[32; 32].into(),
+				[21; 64].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// response from key server 1 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// response from key server 1 is not required anymore
-			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER0_ID, [32; 32]));
+			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+			));
 
 			// let's simulate migration
 			crate::CurrentSetChangeBlock::<TestRuntime>::put(100);
@@ -493,12 +514,18 @@ mod tests {
 			// response from key server 2 is received
 			DocumentKeyStoreService::<TestRuntime>::on_stored(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
+				[32; 32].into(),
 			).unwrap();
 
 			// response from key server 1 is required again
-			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER0_ID, [32; 32]));
-			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(KEY_SERVER1_ID, [32; 32]));
+			assert!(DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+			));
+			assert!(!DocumentKeyStoreService::<TestRuntime>::is_response_required(
+				KEY_SERVER1_ID.into(),
+				[32; 32].into(),
+			));
 		});
 	}
 }

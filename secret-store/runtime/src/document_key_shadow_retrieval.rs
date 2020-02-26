@@ -19,7 +19,7 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{EntityId, ServerKeyId, KeyServerId, CommonPoint, EncryptedPoint, ServerKeyPublic};
+use ss_primitives::{EntityId, ServerKeyId, KeyServerId};
 use sp_std::vec::Vec;
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, SecretStoreService};
@@ -27,7 +27,7 @@ use crate::utils::KeyServersMask;
 use super::{
 	Trait, Module, Event,
 	DocumentKeyShadowRetrievalFee,
-	DocumentKeyShadowRetrievalRequests, DocumentKeyShadowRetrievalRequestsKeys,
+	DocumentKeyShadowRetrievalRequestsKeys, DocumentKeyShadowRetrievalRequests,
 	DocumentKeyShadowRetrievalCommonResponses, DocumentKeyShadowRetrievalPersonalResponses,
 	resolve_entity_id,
 };
@@ -43,7 +43,7 @@ pub struct DocumentKeyShadowRetrievalRequest<Number> {
 	pub requester: EntityId,
 	/// The public key of author of this request. This must be the public key coresponding
 	/// to the claimed author id. Otherwise, request will fail.
-	pub requester_public: ServerKeyPublic,
+	pub requester_public: sp_core::H512,
 	/// Common data retrieval responses.
 	pub common_responses: Responses<Number>,
 	/// Key threshold that key servers have agreed upon in common phase. If it is None,
@@ -77,7 +77,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 	pub fn retrieve(
 		origin: T::Origin,
 		id: ServerKeyId,
-		requester_public: ServerKeyPublic,
+		requester_public: sp_core::H512,
 	) -> Result<(), &'static str> {
 		// limit number of requests in the queue
 		ensure!(
@@ -106,10 +106,10 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		// 1) at least 50% + 1 authorities agreement on the same threshold value
 		// 2) after threshold is agreed, we will wait for threshold + 1 values of document key
 
-		// the data required to compute document key is the triple { commonPoint, encryptedPoint, shadowPoints[] }
+		// the data required to compute document key is the triple { sp_core::H512, encryptedPoint, shadowPoints[] }
 		// this data is computed on threshold + 1 nodes only
 		// retrieval consists of two phases:
-		// 1) every authority that is seeing retrieval request, publishes { commonPoint, encryptedPoint, threshold }
+		// 1) every authority that is seeing retrieval request, publishes { sp_core::H512, encryptedPoint, threshold }
 		// 2) master node starts decryption session
 		// 2.1) every node participating in decryption session publishes { address[], shadow }
 		// 2.2) once there are threshold + 1 confirmations of { address[], shadow } from exactly address[]
@@ -137,7 +137,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		origin: T::Origin,
 		id: ServerKeyId,
 		requester: EntityId,
-		common_point: CommonPoint,
+		common_point: sp_core::H512,
 		threshold: u8,
 	) -> Result<(), &'static str> {
 		// check if this request is active (the tx could arrive when request is already inactive)
@@ -276,17 +276,16 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		let key_server_index = SecretStoreService::<T>::key_server_index_from_origin(origin)?;
 		if request.threshold.is_none() {
 			// insert response
-			/*let invalid_response_support = SecretStoreService::<T>
+			let invalid_response_support = SecretStoreService::<T>
 				::insert_response::<_, _, DocumentKeyShadowRetrievalCommonResponses>(
 					key_server_index,
 					key_servers_count / 2,
 					&mut request.common_responses,
 					&retrieval_id,
-					&(Vec::new(), 0xFF),
-				)?;*/
-			unimplemented!("TODO");
+					&(Default::default(), 0xFF),
+				)?;
 
-/*			// ...and check if there are enough confirmations for invalid response
+			// ...and check if there are enough confirmations for invalid response
 			if invalid_response_support == ResponseSupport::Unconfirmed {
 				DocumentKeyShadowRetrievalRequests::<T>::insert(retrieval_id, request);
 				return Ok(());
@@ -295,7 +294,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 			// delete request and fire event
 			delete_request::<T>(&retrieval_id);
 			Module::<T>::deposit_event(Event::DocumentKeyShadowRetrievalError(id, requester));
-			return Ok(());*/
+			return Ok(());
 		}
 
 		// TODO: do we reset this when KSset changes???
@@ -371,17 +370,17 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// check that event has been emitted
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyShadowRetrievalRequested(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
-						vec![42],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
+						[42; 64].into(),
 					).into())
 					.is_some(),
 			);
@@ -394,8 +393,8 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER2),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -407,16 +406,16 @@ mod tests {
 			for i in 0..MAX_REQUESTS {
 				DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 					Origin::signed(REQUESTER1),
-					[i as u8; 32],
-					vec![42],
+					[i as u8; 32].into(),
+					[42; 64].into(),
 				).unwrap();
 			}
 
 			// and now try to push new request so that there will be more than a limit requests
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[MAX_REQUESTS as u8; 32],
-				vec![42],
+				[MAX_REQUESTS as u8; 32].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -427,15 +426,15 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap_err();
 		});
 	}
@@ -446,24 +445,24 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive same response from 50%+1 servers
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 			assert_eq!(
@@ -472,9 +471,9 @@ mod tests {
 			);
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 
@@ -486,25 +485,28 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyCommonRetrieved(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
-						vec![21],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
+						[21; 64].into(),
 						4,
 					).into())
 					.is_some(),
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::DocumentKeyPersonalRetrievalRequested([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::DocumentKeyPersonalRetrievalRequested(
+						[32; 32].into(),
+						[42; 64].into(),
+					).into())
 					.is_some(),
 			);
 
 			// and now next key server responds with the same data
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 
@@ -522,31 +524,31 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive same response1 from 2 servers, then response2 from 1 sever, then response1 from 1 server
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![84],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[84; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 			assert_eq!(
@@ -555,9 +557,9 @@ mod tests {
 			);
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 
@@ -569,16 +571,19 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyCommonRetrieved(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
-						vec![21],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
+						[21; 64].into(),
 						4,
 					).into())
 					.is_some(),
 			);
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
-					.find(|e| e.event == Event::DocumentKeyPersonalRetrievalRequested([32; 32], vec![42]).into())
+					.find(|e| e.event == Event::DocumentKeyPersonalRetrievalRequested(
+						[32; 32].into(),
+						[42; 64].into(),
+					).into())
 					.is_some(),
 			);
 		});
@@ -590,31 +595,31 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive responses from key servers so that consensus is unreachable
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				4,
 			).unwrap();
 			assert_eq!(
@@ -623,9 +628,9 @@ mod tests {
 			);
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER3),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				3,
 			).unwrap();
 
@@ -637,8 +642,8 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyShadowRetrievalError(
-						[32; 32],
-						[REQUESTER1 as u8; 32]
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into()
 					).into())
 					.is_some(),
 			);
@@ -651,9 +656,9 @@ mod tests {
 			// receive common response before/after request
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![21],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[21; 64].into(),
 				4,
 			).unwrap();
 		});
@@ -665,8 +670,8 @@ mod tests {
 			// receive personal response before/after request
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(0),
 				vec![100],
 				vec![101],
@@ -680,18 +685,18 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive personal response before common
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(0),
-				vec![100],
-				vec![101],
+				vec![100].into(),
+				vec![101].into(),
 			).unwrap_err();
 		});
 	}
@@ -702,46 +707,46 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common responses
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// receive shadow-different responses from the same KS - the second should fail
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(0),
 				vec![100],
 				vec![101],
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(0),
 				vec![100],
 				vec![102],
@@ -755,16 +760,16 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common response from usual entity
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(REQUESTER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap_err();
 		});
@@ -776,38 +781,38 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common responses
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// receive personal response from usual requester
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(REQUESTER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(0),
 				vec![100],
 				vec![101],
@@ -821,38 +826,38 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common responses
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// receive error from non-KS
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(REQUESTER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(1),
 				vec![100],
 				vec![101],
@@ -866,8 +871,8 @@ mod tests {
 			// receive common response from usual entity
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 		});
 	}
@@ -878,15 +883,15 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common response from usual entity
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap_err();
 		});
 	}
@@ -897,21 +902,21 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
 
 			// receive common response from usual entity
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			assert_eq!(
 				events_count,
@@ -919,8 +924,8 @@ mod tests {
 			);
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 
 			// check that retrieval error is published
@@ -931,8 +936,8 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyShadowRetrievalError(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
 					).into())
 					.is_some(),
 			);
@@ -945,30 +950,30 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common responses
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -976,18 +981,18 @@ mod tests {
 			// N is 5 => we are waiting for 3 (5/2 + 1) errors before reporting an error
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 
 			// check that error isn't published
@@ -1004,30 +1009,30 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// receive common responses
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			let events_count = frame_system::Module::<TestRuntime>::events().len();
@@ -1035,18 +1040,18 @@ mod tests {
 			// N is 5 => we are waiting for 3 (5/2 + 1) errors before reporting an error
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_retrieval_error(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			).unwrap();
 
 			// check that retrieval error is published
@@ -1057,8 +1062,8 @@ mod tests {
 			assert!(
 				frame_system::Module::<TestRuntime>::events().into_iter()
 					.find(|e| e.event == Event::DocumentKeyShadowRetrievalError(
-						[32; 32],
-						[REQUESTER1 as u8; 32],
+						[32; 32].into(),
+						[REQUESTER1 as u8; 20].into(),
 					).into())
 					.is_some(),
 			);
@@ -1071,90 +1076,90 @@ mod tests {
 			// ask to retrieve document key shadow
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			// initially responses from KS0 && KS1 are required
 			assert!(
 				DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER0_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER0_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 				&& DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER1_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER1_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 			);
 
 			// receive response from KS0
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// response from KS1 is required
 			assert!(
 				!DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER0_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER0_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 				&& DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER1_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER1_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 			);
 
 			// receive response from KS1
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER1),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// response from other KS are required
 			assert!(
 				!DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER0_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER0_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 				&& !DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER1_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER1_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 			);
 
 			// complete common retrieval step
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// response from both KS is required again
 			assert!(
 				DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER0_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER0_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 				&& DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER1_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER1_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 			);
 
@@ -1162,8 +1167,8 @@ mod tests {
 			// only and if some node fail to respond we need to restart)
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_personal_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 				KeyServersMask::from_index(1),
 				vec![100],
 				vec![101],
@@ -1172,14 +1177,14 @@ mod tests {
 			// response from both KS is required again
 			assert!(
 				DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER0_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER0_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 				&& DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-					KEY_SERVER1_ID,
-					[32; 32],
-					[REQUESTER1 as u8; 32],
+					KEY_SERVER1_ID.into(),
+					[32; 32].into(),
+					[REQUESTER1 as u8; 20].into(),
 				)
 			);
 		});
@@ -1191,22 +1196,22 @@ mod tests {
 			// request is created and single key server responds
 			DocumentKeyShadowRetrievalService::<TestRuntime>::retrieve(
 				Origin::signed(REQUESTER1),
-				[32; 32],
-				vec![42],
+				[32; 32].into(),
+				[42; 64].into(),
 			).unwrap();
 
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			assert!(!DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-				KEY_SERVER0_ID,
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			));
 
 			// then we're starting && completing the migration
@@ -1214,46 +1219,46 @@ mod tests {
 
 			// check that response from KS0 is now required
 			assert!(DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-				KEY_SERVER0_ID,
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			));
 
 			// now we're receiving common response from KS2 && KS4 and still response from KS1 is required
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER2),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER4),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 			assert!(DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-				KEY_SERVER0_ID,
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			));
 
 			// now we're receiving response from KS0
 			DocumentKeyShadowRetrievalService::<TestRuntime>::on_common_retrieved(
 				Origin::signed(KEY_SERVER0),
-				[32; 32],
-				[REQUESTER1 as u8; 32],
-				vec![42],
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
+				[42; 64].into(),
 				1,
 			).unwrap();
 
 			// and still response from KS0 is required (because we always personal responses)
 			assert!(DocumentKeyShadowRetrievalService::<TestRuntime>::is_response_required(
-				KEY_SERVER0_ID,
-				[32; 32],
-				[REQUESTER1 as u8; 32],
+				KEY_SERVER0_ID.into(),
+				[32; 32].into(),
+				[REQUESTER1 as u8; 20].into(),
 			));
 		});
 	}

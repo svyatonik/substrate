@@ -294,7 +294,7 @@ mod tests {
 		default_initialization().execute_with(|| {
 			// just after initialization: the same as in the genesis config
 			assert_eq!(
-				ordered_set(key_server_set().snapshot(Origin::signed(KEY_SERVER1)).current_set),
+				ordered_set(key_server_set().snapshot(KEY_SERVER1_ID.into()).current_set),
 				default_key_server_set(),
 			);
 		});
@@ -305,7 +305,7 @@ mod tests {
 		default_initialization().execute_with(|| {
 			// just after initialization: the same as in the genesis config
 			assert_eq!(
-				ordered_set(key_server_set().snapshot(Origin::signed(KEY_SERVER1)).new_set),
+				ordered_set(key_server_set().snapshot(KEY_SERVER1_ID.into()).new_set),
 				default_key_server_set(),
 			);
 		});
@@ -316,7 +316,7 @@ mod tests {
 		default_initialization().execute_with(|| {
 			// just after initialization: no active migration
 			assert_eq!(
-				key_server_set().snapshot(Origin::signed(KEY_SERVER1)).migration,
+				key_server_set().snapshot(KEY_SERVER1_ID.into()).migration,
 				None,
 			);
 		});
@@ -328,17 +328,17 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 
-			let snapshot = key_server_set().snapshot(Origin::signed(KEY_SERVER1));
+			let snapshot = key_server_set().snapshot(KEY_SERVER1_ID.into());
 
 			// the server#3 is not on current set
 			assert_eq!(ordered_set(snapshot.current_set), default_key_server_set());
 			// the server#3 is on new set
 			let mut new_set = default_key_server_set();
-			new_set.push((KEY_SERVER2_ID, KEY_SERVER2_ID.to_vec()));
+			new_set.push((KEY_SERVER2_ID.into(), KEY_SERVER2_ID.to_vec()));
 			assert_eq!(ordered_set(snapshot.new_set), ordered_set(new_set));
 			// the migration has not yet started
 			assert_eq!(snapshot.migration, None);
@@ -351,7 +351,7 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(REQUESTER1),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap_err();
 		});
@@ -363,7 +363,7 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER1_ID,
+				KEY_SERVER1_ID.into(),
 				KEY_SERVER1_ID.to_vec(),
 			).unwrap_err();
 		});
@@ -375,10 +375,10 @@ mod tests {
 			// remove server#2 once initialization has completed
 			key_server_set().remove_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER1_ID,
+				KEY_SERVER1_ID.into(),
 			).unwrap();
 
-			let snapshot = key_server_set().snapshot(Origin::signed(KEY_SERVER1));
+			let snapshot = key_server_set().snapshot(KEY_SERVER1_ID.into());
 
 			// the server#2 is on current set
 			assert_eq!(ordered_set(snapshot.current_set), default_key_server_set());
@@ -397,7 +397,7 @@ mod tests {
 			// remove server#2 once initialization has completed
 			key_server_set().remove_key_server(
 				Origin::signed(REQUESTER1),
-				KEY_SERVER1_ID,
+				KEY_SERVER1_ID.into(),
 			).unwrap_err();
 		});
 	}
@@ -408,7 +408,7 @@ mod tests {
 			// remove server#2 once initialization has completed
 			key_server_set().remove_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 			).unwrap_err();
 		});
 	}
@@ -419,18 +419,18 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
-			let snapshot = key_server_set().snapshot(Origin::signed(KEY_SERVER1));
+			let snapshot = key_server_set().snapshot(KEY_SERVER1_ID.into());
 			let mut new_set = default_key_server_set();
-			new_set.push((KEY_SERVER2_ID, KEY_SERVER2_ID.to_vec()));
+			new_set.push((KEY_SERVER2_ID.into(), KEY_SERVER2_ID.to_vec()));
 
 			// check that migration has started
 			assert_eq!(
@@ -448,9 +448,9 @@ mod tests {
 					current_set: default_key_server_set(),
 					new_set: ordered_set(new_set.clone()),
 					migration: Some(KeyServerSetMigration {
-						id: [42; 32],
+						id: [42; 32].into(),
 						set: ordered_set(new_set),
-						master: KEY_SERVER1_ID,
+						master: KEY_SERVER1_ID.into(),
 						is_confirmed: false,
 					}),
 				},
@@ -464,18 +464,18 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 			// and then again server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -486,7 +486,7 @@ mod tests {
 			// try to start migration when current set is equal to new set
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -497,17 +497,17 @@ mod tests {
 			// remove server#1 and server#2 once initialization has completed
 			key_server_set().remove_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER0_ID,
+				KEY_SERVER0_ID.into(),
 			).unwrap();
 			key_server_set().remove_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER1_ID
+				KEY_SERVER1_ID.into(),
 			).unwrap();
 
 			// try to start migration when new set is empty
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -518,14 +518,14 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 
 			// try to start migration by server#4
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER3),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -539,73 +539,73 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// check that noone has confirmed migration yet
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER0)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER0_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER1)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER1_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER2)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER2_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert_eq!(CurrentSetChangeBlock::<TestRuntime>::get(), 0);
 
 			// confirm migration by server#1
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER0),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// check that migration has confirmed by: server#1
 			assert!(
-				key_server_set().snapshot(Origin::signed(KEY_SERVER0)).migration.unwrap().is_confirmed
+				key_server_set().snapshot(KEY_SERVER0_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER1)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER1_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER2)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER2_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert_eq!(CurrentSetChangeBlock::<TestRuntime>::get(), 0);
 
 			// confirm migration by server#2
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// check that migration has confirmed by: server#1, server#2
 			assert!(
-				key_server_set().snapshot(Origin::signed(KEY_SERVER0)).migration.unwrap().is_confirmed
+				key_server_set().snapshot(KEY_SERVER0_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				key_server_set().snapshot(Origin::signed(KEY_SERVER1)).migration.unwrap().is_confirmed
+				key_server_set().snapshot(KEY_SERVER1_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert!(
-				!key_server_set().snapshot(Origin::signed(KEY_SERVER2)).migration.unwrap().is_confirmed
+				!key_server_set().snapshot(KEY_SERVER2_ID.into()).migration.unwrap().is_confirmed
 			);
 			assert_eq!(CurrentSetChangeBlock::<TestRuntime>::get(), 0);
 
 			// confirm migration by server#3
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER2),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// check that migration has completed
-			let snapshot = key_server_set().snapshot(Origin::signed(KEY_SERVER1));
+			let snapshot = key_server_set().snapshot(KEY_SERVER1_ID.into());
 			let mut new_set = default_key_server_set();
-			new_set.push((KEY_SERVER2_ID, KEY_SERVER2_ID.to_vec()));
+			new_set.push((KEY_SERVER2_ID.into(), KEY_SERVER2_ID.to_vec()));
 			assert_eq!(snapshot.migration, None);
 			assert_eq!(ordered_set(snapshot.current_set), new_set);
 			assert_eq!(ordered_set(snapshot.new_set), new_set);
@@ -619,19 +619,19 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// try to confirm other migration by server#1
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER1),
-				[10; 32],
+				[10; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -642,19 +642,19 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// try to confirm other migration by server#4
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER3),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -665,24 +665,24 @@ mod tests {
 			// add server#3 once initialization has completed
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				KEY_SERVER2_ID,
+				KEY_SERVER2_ID.into(),
 				KEY_SERVER2_ID.to_vec(),
 			).unwrap();
 			// and then server#1 starts migration
 			key_server_set().start_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 
 			// try to confirm migration by server#1
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap();
 			// and then again - try to confirm migration by server#1
 			key_server_set().confirm_migration(
 				Origin::signed(KEY_SERVER1),
-				[42; 32],
+				[42; 32].into(),
 			).unwrap_err();
 		});
 	}
@@ -691,14 +691,14 @@ mod tests {
 	fn should_fail_when_trying_to_add_more_than_256_key_servers() {
 		default_initialization().execute_with(|| {
 			// add new key servers so that there are now 256 key servers in the new set
-			let mut server_id = [0; 32];
+			let mut server_id = [0; 20];
 			let mut server_addr = vec![0, 0];
 			for i in 2..256 {
 				server_id[1] = i as u8;
 				server_addr[1] = i as u8;
 				key_server_set().add_key_server(
 					Origin::signed(OWNER),
-					server_id,
+					server_id.into(),
 					server_addr.clone(),
 				).unwrap();
 			}
@@ -708,7 +708,7 @@ mod tests {
 			server_addr[0] = 42;
 			key_server_set().add_key_server(
 				Origin::signed(OWNER),
-				server_id,
+				server_id.into(),
 				server_addr,
 			).unwrap_err();
 		});

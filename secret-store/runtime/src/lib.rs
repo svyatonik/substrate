@@ -4,7 +4,7 @@ use sp_std::prelude::*;
 
 mod blockchain_storage;
 mod entity_id_storage;
-//mod document_key_shadow_retrieval;
+mod document_key_shadow_retrieval;
 mod document_key_storing;
 mod key_server_set;
 mod key_server_set_storage;
@@ -22,11 +22,11 @@ use ss_primitives::{
 	ServerKeyId,
 	key_server_set::{KeyServerSetSnapshot, KeyServerNetworkAddress, MigrationId as MigrationIdT},
 };
-/*use document_key_shadow_retrieval::{
+use document_key_shadow_retrieval::{
 	DocumentKeyShadowRetrievalRequest,
 	DocumentKeyShadowRetrievalPersonalData,
 	DocumentKeyShadowRetrievalService,
-};*/
+};
 use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
 use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
 use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
@@ -156,6 +156,52 @@ decl_module! {
 			DocumentKeyStoreService::<T>::on_store_error(origin, id)?;
 		}
 
+		/// Retrieve document key shadow.
+		pub fn retrieve_document_key_shadow(origin, id: ServerKeyId, requester_public: sp_core::H512) {
+			DocumentKeyShadowRetrievalService::<T>::retrieve(origin, id, requester_public)?;
+		}
+
+		/// Called when document key common part is reported by key server.
+		pub fn document_key_common_retrieved(
+			origin,
+			id: ServerKeyId,
+			requester: EntityId,
+			common_point: sp_core::H512,
+			threshold: u8,
+		) {
+			DocumentKeyShadowRetrievalService::<T>::on_common_retrieved(
+				origin,
+				id,
+				requester,
+				common_point,
+				threshold,
+			)?;
+		}
+		/// Called when document key personal part is reported by key server.
+		pub fn document_key_personal_retrieved(
+			origin,
+			id: ServerKeyId,
+			requester: EntityId,
+			participants: KeyServersMask,
+			decrypted_secret: Vec<u8>,
+			shadow: Vec<u8>,
+		) {
+			DocumentKeyShadowRetrievalService::<T>::on_personal_retrieved(
+				origin,
+				id,
+				requester,
+				participants,
+				decrypted_secret,
+				shadow,
+			)?;
+		}
+
+		/// Called when document key shadow retrieval error is reported by key server.
+		pub fn document_key_shadow_retrieval_error(origin, id: ServerKeyId, requester: EntityId) {
+			DocumentKeyShadowRetrievalService::<T>::on_retrieval_error(origin, id, requester)?;
+		}
+
+
 /*		/// Publish key server response for service request.
 		pub fn service_response(origin, response: ServiceResponse) {
 			match response {
@@ -246,23 +292,19 @@ decl_event!(
 		DocumentKeyStored(ServerKeyId),
 		///
 		DocumentKeyStoreError(ServerKeyId),
-	}
-);
-
-/*
-
 
 		/// TODO: needs to be verified by the key server
-		DocumentKeyShadowRetrievalRequested(ServerKeyId, EntityId, ServerKeyPublic),
+		DocumentKeyShadowRetrievalRequested(ServerKeyId, EntityId, sp_core::H512),
 		///
-		DocumentKeyCommonRetrieved(ServerKeyId, EntityId, CommonPoint, u8),
+		DocumentKeyCommonRetrieved(ServerKeyId, EntityId, sp_core::H512, u8),
 		///
-		DocumentKeyPersonalRetrievalRequested(ServerKeyId, ServerKeyPublic),
+		DocumentKeyPersonalRetrievalRequested(ServerKeyId, sp_core::H512),
 		///
 		DocumentKeyShadowRetrievalError(ServerKeyId, EntityId),
 		///
 		DocumentKeyPersonalRetrieved(ServerKeyId, EntityId, Vec<u8>, Vec<u8>),
-*/
+	}
+);
 
 decl_storage! {
 	trait Store for Module<T: Trait> as SecretStore {
@@ -297,6 +339,17 @@ decl_storage! {
 		DocumentKeyStoreRequests: map ServerKeyId
 			=> Option<DocumentKeyStoreRequest<<T as frame_system::Trait>::BlockNumber>>;
 		DocumentKeyStoreResponses: double_map ServerKeyId, twox_128(()) => u8;
+
+		pub DocumentKeyShadowRetrievalFee get(document_key_shadow_retrieval_fee) config(): BalanceOf<T>;
+		DocumentKeyShadowRetrievalRequestsKeys: Vec<(ServerKeyId, EntityId)>;
+		DocumentKeyShadowRetrievalRequests: map (ServerKeyId, EntityId)
+			=> Option<DocumentKeyShadowRetrievalRequest<<T as frame_system::Trait>::BlockNumber>>;
+		DocumentKeyShadowRetrievalCommonResponses:
+			double_map (ServerKeyId, EntityId),
+			twox_128((sp_core::H512, u8)) => u8;
+		DocumentKeyShadowRetrievalPersonalResponses:
+			double_map (ServerKeyId, EntityId),
+			twox_128((KeyServersMask, Vec<u8>)) => DocumentKeyShadowRetrievalPersonalData;
 	}
 	add_extra_genesis {
 		config(is_initialization_completed): bool;
@@ -325,21 +378,6 @@ decl_storage! {
 		})
 	}
 }
-
-/*
-
-
-		pub DocumentKeyShadowRetrievalFee get(document_key_shadow_retrieval_fee) config(): BalanceOf<T>;
-		DocumentKeyShadowRetrievalRequestsKeys: Vec<(ServerKeyId, EntityId)>;
-		DocumentKeyShadowRetrievalRequests: map (ServerKeyId, EntityId)
-			=> Option<DocumentKeyShadowRetrievalRequest<<T as frame_system::Trait>::BlockNumber>>;
-		DocumentKeyShadowRetrievalCommonResponses:
-			double_map (ServerKeyId, EntityId),
-			twox_128((CommonPoint, u8)) => u8;
-		DocumentKeyShadowRetrievalPersonalResponses:
-			double_map (ServerKeyId, EntityId),
-			twox_128((KeyServersMask, Vec<u8>)) => DocumentKeyShadowRetrievalPersonalData;
-*/
 
 impl<T: Trait> Module<T> {
 	/// Get snapshot of key servers set state.
@@ -413,6 +451,35 @@ impl<T: Trait> Module<T> {
 	///
 	pub fn is_document_key_store_response_required(key_server: KeyServerId, key_id: ServerKeyId) -> bool {
 		DocumentKeyStoreService::<T>::is_response_required(key_server, key_id)
+	}
+
+	///
+	pub fn is_document_key_shadow_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+		DocumentKeyShadowRetrievalRequestsKeys::get()
+			.into_iter()
+			.skip(begin as usize)
+			.take(end.saturating_sub(begin) as usize)
+			.map(|(key_id, requester)| {
+				let request = DocumentKeyShadowRetrievalRequests::<T>::get(&(key_id, requester))
+					.expect("every key from DocumentKeyStoreRequestsKeys has corresponding
+						entry in DocumentKeyStoreRequests; qed");
+				match request.threshold.is_some() {
+					true => ss_primitives::service::ServiceTask::RetrieveShadowDocumentKeyCommon(
+						key_id,
+						requester,
+					),
+					false => ss_primitives::service::ServiceTask::RetrieveShadowDocumentKeyPersonal(
+						key_id,
+						request.requester_public,
+					),
+				}
+			})
+			.collect()
+	}
+
+	///
+	pub fn is_document_key_shadow_retrieval_response_required(key_server: KeyServerId, key_id: ServerKeyId, requester: EntityId) -> bool {
+		DocumentKeyShadowRetrievalService::<T>::is_response_required(key_server, key_id, requester)
 	}
 
 /*

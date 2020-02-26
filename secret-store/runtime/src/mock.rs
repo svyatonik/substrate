@@ -19,11 +19,10 @@
 #![cfg(test)]
 
 use std::collections::BTreeMap;
-use codec::Encode;
 use sp_runtime::Perbill;
 use sp_runtime::testing::Header;
 use sp_runtime::traits::{IdentityLookup, BlakeTwo256};
-use sp_core::{H256, Blake2Hasher};
+use sp_core::H256;
 use frame_support::{impl_outer_origin, impl_outer_event, parameter_types};
 use crate::GenesisConfig;
 use super::*;
@@ -110,11 +109,13 @@ pub const KEY_SERVER2: u64 = 102;
 pub const KEY_SERVER3: u64 = 103;
 pub const KEY_SERVER4: u64 = 104;
 
-pub const KEY_SERVER0_ID: KeyServerId = [KEY_SERVER0 as u8; 32];
-pub const KEY_SERVER1_ID: KeyServerId = [KEY_SERVER1 as u8; 32];
-pub const KEY_SERVER2_ID: KeyServerId = [KEY_SERVER2 as u8; 32];
-pub const KEY_SERVER3_ID: KeyServerId = [KEY_SERVER3 as u8; 32];
-pub const KEY_SERVER4_ID: KeyServerId = [KEY_SERVER4 as u8; 32];
+pub const KEY_SERVER0_ID: [u8; 20] = [KEY_SERVER0 as u8; 20];
+pub const KEY_SERVER1_ID: [u8; 20] = [KEY_SERVER1 as u8; 20];
+pub const KEY_SERVER2_ID: [u8; 20] = [KEY_SERVER2 as u8; 20];
+pub const KEY_SERVER3_ID: [u8; 20] = [KEY_SERVER3 as u8; 20];
+pub const KEY_SERVER4_ID: [u8; 20] = [KEY_SERVER4 as u8; 20];
+
+type NetworkAddress = Vec<u8>;
 
 pub fn ordered_set(set: Vec<(KeyServerId, NetworkAddress)>) -> Vec<(KeyServerId, NetworkAddress)> {
 	set.into_iter().collect::<BTreeMap<_, _>>().into_iter().collect()
@@ -122,26 +123,26 @@ pub fn ordered_set(set: Vec<(KeyServerId, NetworkAddress)>) -> Vec<(KeyServerId,
 
 pub fn default_key_server_set() -> Vec<(KeyServerId, NetworkAddress)> {
 	vec![
-		(KEY_SERVER0_ID, KEY_SERVER0_ID.to_vec()),
-		(KEY_SERVER1_ID, KEY_SERVER1_ID.to_vec()),
+		(KEY_SERVER0_ID.into(), KEY_SERVER0_ID.to_vec()),
+		(KEY_SERVER1_ID.into(), KEY_SERVER1_ID.to_vec()),
 	]
 }
 
 pub fn default_key_server_set3() -> Vec<(KeyServerId, NetworkAddress)> {
 	vec![
-		(KEY_SERVER0_ID, KEY_SERVER0_ID.to_vec()),
-		(KEY_SERVER1_ID, KEY_SERVER1_ID.to_vec()),
-		(KEY_SERVER2_ID, KEY_SERVER2_ID.to_vec()),
+		(KEY_SERVER0_ID.into(), KEY_SERVER0_ID.to_vec()),
+		(KEY_SERVER1_ID.into(), KEY_SERVER1_ID.to_vec()),
+		(KEY_SERVER2_ID.into(), KEY_SERVER2_ID.to_vec()),
 	]
 }
 
 pub fn default_key_server_set5() -> Vec<(KeyServerId, NetworkAddress)> {
 	vec![
-		(KEY_SERVER0_ID, KEY_SERVER0_ID.to_vec()),
-		(KEY_SERVER1_ID, KEY_SERVER1_ID.to_vec()),
-		(KEY_SERVER2_ID, KEY_SERVER2_ID.to_vec()),
-		(KEY_SERVER3_ID, KEY_SERVER3_ID.to_vec()),
-		(KEY_SERVER4_ID, KEY_SERVER4_ID.to_vec()),
+		(KEY_SERVER0_ID.into(), KEY_SERVER0_ID.to_vec()),
+		(KEY_SERVER1_ID.into(), KEY_SERVER1_ID.to_vec()),
+		(KEY_SERVER2_ID.into(), KEY_SERVER2_ID.to_vec()),
+		(KEY_SERVER3_ID.into(), KEY_SERVER3_ID.to_vec()),
+		(KEY_SERVER4_ID.into(), KEY_SERVER4_ID.to_vec()),
 	]
 }
 
@@ -154,6 +155,15 @@ fn initialize(
 		owner: OWNER,
 		is_initialization_completed,
 		key_servers: key_server_set,
+		claims: vec![
+			(OWNER, [OWNER as u8; 20].into()),
+			(REQUESTER1, [REQUESTER1 as u8; 20].into()),
+			(KEY_SERVER0, KEY_SERVER0_ID.into()),
+			(KEY_SERVER1, KEY_SERVER1_ID.into()),
+			(KEY_SERVER2, KEY_SERVER2_ID.into()),
+			(KEY_SERVER3, KEY_SERVER3_ID.into()),
+			(KEY_SERVER4, KEY_SERVER4_ID.into()),
+		],
 		server_key_generation_fee: 1_000_000,
 		server_key_retrieval_fee: 1_000_000,
 		document_key_store_fee: 1_000_000,
@@ -169,27 +179,12 @@ fn initialize(
 	};
 	config.assimilate_storage(&mut t).unwrap();
 
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&OWNER), [OWNER as u8; 32].encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&REQUESTER1), [REQUESTER1 as u8; 32].encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&KEY_SERVER0), KEY_SERVER0_ID.encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&KEY_SERVER1), KEY_SERVER1_ID.encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&KEY_SERVER2), KEY_SERVER2_ID.encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&KEY_SERVER3), KEY_SERVER3_ID.encode());
-	t.top.insert(ClaimedId::<TestRuntime>::hashed_key_for(&KEY_SERVER4), KEY_SERVER4_ID.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&[OWNER as u8; 32]), OWNER.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&[REQUESTER1 as u8; 32]), REQUESTER1.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&KEY_SERVER0_ID), KEY_SERVER0.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&KEY_SERVER1_ID), KEY_SERVER1.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&KEY_SERVER2_ID), KEY_SERVER2.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&KEY_SERVER3_ID), KEY_SERVER3.encode());
-	t.top.insert(ClaimedBy::<TestRuntime>::hashed_key_for(&KEY_SERVER4_ID), KEY_SERVER4.encode());
-
 	t.into()
 }
 
-pub fn empty_initialization() -> sp_io::TestExternalities {
+/*pub fn empty_initialization() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
-}
+}*/
 
 pub fn basic_initialization() -> sp_io::TestExternalities {
 	initialize(false, default_key_server_set())
