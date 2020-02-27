@@ -90,6 +90,16 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		let requester = resolve_entity_id::<T>(&origin)?;
 		let retrieval_id = (id, requester);
 
+		// check that requester_public corresponds to requester address (EntityId)
+		let requester_public_hash = sp_io::hashing::keccak_256(requester_public.as_fixed_bytes());
+		let mut computed_requester_address = EntityId::zero();
+		computed_requester_address.as_bytes_mut().copy_from_slice(&requester_public_hash[12..]);
+		// TODO: add test for this condition
+		ensure!(
+			requester == computed_requester_address,
+			"Invalid public key passed",
+		);
+
 		// check if there are no pending request for the same key
 		ensure!(
 			!DocumentKeyShadowRetrievalRequests::<T>::exists(retrieval_id),
@@ -127,7 +137,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		DocumentKeyShadowRetrievalRequestsKeys::append(sp_std::iter::once(&retrieval_id))?;
 
 		// emit event
-		Module::<T>::deposit_event(Event::DocumentKeyShadowRetrievalRequested(id, requester, requester_public));
+		Module::<T>::deposit_event(Event::DocumentKeyShadowRetrievalRequested(id, requester));
 
 		Ok(())
 	}

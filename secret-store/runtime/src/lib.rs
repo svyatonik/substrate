@@ -276,7 +276,7 @@ decl_event!(
 		DocumentKeyStoreError(ServerKeyId),
 
 		/// TODO: needs to be verified by the key server
-		DocumentKeyShadowRetrievalRequested(ServerKeyId, EntityId, sp_core::H512),
+		DocumentKeyShadowRetrievalRequested(ServerKeyId, EntityId),
 		///
 		DocumentKeyCommonRetrieved(ServerKeyId, EntityId, sp_core::H512, u8),
 		///
