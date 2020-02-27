@@ -36,6 +36,11 @@ sp_api::decl_runtime_apis! {
 		fn document_key_store_tasks(begin: u32, end: u32) -> Vec<ServiceTask>;
 		/// Check if server key retrieval response is required from given key server.
 		fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool;
+
+		///
+		fn document_key_shadow_retrieval_tasks(begin: u32, end: u32) -> Vec<ServiceTask>;
+		///
+		fn is_document_key_shadow_retrieval_response_required(key_server: KeyServerId, key: ServerKeyId, requester: EntityId) -> bool;
 	}
 }
 /*

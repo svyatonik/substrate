@@ -332,6 +332,7 @@ pub fn testnet_genesis(
 			server_key_generation_fee: 0,
 			server_key_retrieval_fee: 0,
 			document_key_store_fee: 0,
+			document_key_shadow_retrieval_fee: 0,
 		}),
 	}
 }

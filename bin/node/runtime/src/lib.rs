@@ -727,7 +727,7 @@ impl_runtime_apis! {
 
 	impl ss_primitives::acl_storage::SecretStoreAclApi<Block> for Runtime {
 		fn check(
-			requester: ss_primitives::EntityId,
+			_requester: ss_primitives::EntityId,
 			key: ss_primitives::ServerKeyId,
 		) -> bool {
 			// TODO: change to real impl
@@ -771,42 +771,21 @@ impl_runtime_apis! {
 		fn is_document_key_store_response_required(key_server: ss_primitives::KeyServerId, key_id: ss_primitives::ServerKeyId) -> bool {
 			SecretStore::is_document_key_store_response_required(key_server, key_id)
 		}
+
+		fn document_key_shadow_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+			SecretStore::document_key_shadow_retrieval_tasks(begin, end)
+		}
+
+		fn is_document_key_shadow_retrieval_response_required(
+			key_server: ss_primitives::KeyServerId,
+			key_id: ss_primitives::ServerKeyId,
+			requester: ss_primitives::EntityId,
+		) -> bool {
+			SecretStore::is_document_key_shadow_retrieval_response_required(key_server, key_id, requester)
+		}
 	}
 
 }
-/*
-	impl ss_primitives::service::ServiceRuntimeApi<Block> for Runtime {
-		fn pending_tasks_count() -> u32 {
-			SecretStore::service_tasks_count()
-		}
-
-		fn pending_task(index: u32) -> Option<ss_primitives::service::ServiceTask> {
-			SecretStore::service_task(index)
-		}
-
-		fn is_server_key_generation_response_required(
-			key_server: ss_primitives::KeyServerId,
-			key: ss_primitives::ServerKeyId,
-		) -> bool {
-			SecretStore::is_server_key_generation_response_required(key_server, key)
-		}
-
-		fn is_server_key_retrieval_response_required(
-			key_server: ss_primitives::KeyServerId,
-			key: ss_primitives::ServerKeyId,
-		) -> bool {
-			SecretStore::is_server_key_retrieval_response_required(key_server, key)
-		}
-
-		fn is_document_key_store_response_required(
-			key_server: ss_primitives::KeyServerId,
-			key: ss_primitives::ServerKeyId,
-		) -> bool {
-			SecretStore::is_document_key_store_response_required(key_server, key)
-		}
-	}
-
-*/
 
 #[cfg(test)]
 mod tests {

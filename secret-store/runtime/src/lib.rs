@@ -202,24 +202,6 @@ decl_module! {
 		}
 
 
-/*		/// Publish key server response for service request.
-		pub fn service_response(origin, response: ServiceResponse) {
-			match response {
-				ServiceResponse::ServerKeyGenerated(key_id, key) =>
-					ServerKeyGenerationService::<T>::on_generated(origin, key_id, key)?,
-				ServiceResponse::ServerKeyGenerationFailed(key_id) =>
-					ServerKeyGenerationService::<T>::on_generation_error(origin, key_id)?,
-				_ => unimplemented!("TODO"),
-			}
-		}
-
-		/// Generate server key.
-		pub fn generate_server_key(origin, id: ServerKeyId, threshold: u8) {
-			ServerKeyGenerationService::<T>::generate(origin, id, threshold)?;
-		}
-
-
-*/
 /*
 		/// Allow key operations for given requester.
 		pub fn grant_key_access(origin, key: ServerKeyId, requester: Address) {
@@ -454,7 +436,7 @@ impl<T: Trait> Module<T> {
 	}
 
 	///
-	pub fn is_document_key_shadow_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
+	pub fn document_key_shadow_retrieval_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
 		DocumentKeyShadowRetrievalRequestsKeys::get()
 			.into_iter()
 			.skip(begin as usize)
@@ -481,32 +463,6 @@ impl<T: Trait> Module<T> {
 	pub fn is_document_key_shadow_retrieval_response_required(key_server: KeyServerId, key_id: ServerKeyId, requester: EntityId) -> bool {
 		DocumentKeyShadowRetrievalService::<T>::is_response_required(key_server, key_id, requester)
 	}
-
-/*
-	/// Return count of pending service tasks.
-	pub fn service_tasks_count() -> u32 {
-		unimplemented!()
-	}
-
-	/// Return pending task by index.
-	pub fn service_task(index: u32) -> Option<ServiceTask> {
-		unimplemented!()
-	}
-
-	/// Check if server key generation response is required from given key server.
-	pub fn is_server_key_generation_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
-		ServerKeyGenerationService::<T>::is_response_required(key_server, key)
-	}
-
-	/// Check if server key retrieval response is required from given key server.
-	pub fn is_server_key_retrieval_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
-		ServerKeyRetrievalService::<T>::is_response_required(key_server, key)
-	}
-
-	/// Check if document key store response is required from given key server.
-	pub fn is_document_key_store_response_required(key_server: KeyServerId, key: ServerKeyId) -> bool {
-		DocumentKeyStoreService::<T>::is_response_required(key_server, key)
-	}*/
 }
 
 
