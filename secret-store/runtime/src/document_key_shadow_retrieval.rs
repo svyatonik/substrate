@@ -207,7 +207,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		id: ServerKeyId,
 		requester: EntityId,
 		participants: KeyServersMask,
-		decrypted_secret: Vec<u8>,
+		decrypted_secret: sp_core::H512,
 		shadow: Vec<u8>,
 	) -> Result<(), &'static str> {
 		// check if this request is active (the tx could arrive when request is already inactive)
@@ -249,7 +249,7 @@ impl<T: Trait> DocumentKeyShadowRetrievalService<T> {
 		Module::<T>::deposit_event(Event::DocumentKeyPersonalRetrieved(
 			id,
 			requester,
-			decrypted_secret.clone(),
+			decrypted_secret,
 			shadow,
 		));
 

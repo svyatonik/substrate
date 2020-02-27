@@ -182,7 +182,7 @@ decl_module! {
 			id: ServerKeyId,
 			requester: EntityId,
 			participants: KeyServersMask,
-			decrypted_secret: Vec<u8>,
+			decrypted_secret: sp_core::H512,
 			shadow: Vec<u8>,
 		) {
 			DocumentKeyShadowRetrievalService::<T>::on_personal_retrieved(
@@ -283,7 +283,7 @@ decl_event!(
 		///
 		DocumentKeyShadowRetrievalError(ServerKeyId, EntityId),
 		///
-		DocumentKeyPersonalRetrieved(ServerKeyId, EntityId, Vec<u8>, Vec<u8>),
+		DocumentKeyPersonalRetrieved(ServerKeyId, EntityId, sp_core::H512, Vec<u8>),
 	}
 );
 
@@ -330,7 +330,7 @@ decl_storage! {
 			twox_128((sp_core::H512, u8)) => u8;
 		DocumentKeyShadowRetrievalPersonalResponses:
 			double_map (ServerKeyId, EntityId),
-			twox_128((KeyServersMask, Vec<u8>)) => DocumentKeyShadowRetrievalPersonalData;
+			twox_128((KeyServersMask, sp_core::H512)) => DocumentKeyShadowRetrievalPersonalData;
 	}
 	add_extra_genesis {
 		config(is_initialization_completed): bool;
