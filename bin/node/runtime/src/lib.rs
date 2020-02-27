@@ -745,6 +745,10 @@ impl_runtime_apis! {
 		) -> ss_primitives::key_server_set::KeyServerSetSnapshot {
 			SecretStore::key_server_set_snapshot(key_server)
 		}
+
+		fn current_set_with_indices() -> Vec<(ss_primitives::KeyServerId, u8)> {
+			SecretStore::key_server_set_with_indices()
+		}
 	}
 
 	impl ss_primitives::service::SecretStoreServiceApi<Block> for Runtime {

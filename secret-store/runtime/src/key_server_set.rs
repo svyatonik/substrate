@@ -33,6 +33,7 @@
 //! The set holds at most 256 servers.
 
 use frame_support::ensure;
+use sp_std::vec::Vec;
 use ss_primitives::{
 	KeyServerId,
 	key_server_set::{KeyServerSetSnapshot, KeyServerSetMigration, MigrationId, KeyServerNetworkAddress},
@@ -96,6 +97,11 @@ impl<BS, ES, SS> KeyServerSetWithMigration<BS, ES, SS> where
 				},
 			),
 		}
+	}
+
+	/// Get current key servers with indices.
+	pub fn current_set_with_indices(&self) -> Vec<(KeyServerId, u8)> {
+		self.server_set_storage.current().get().into_iter().map(|ks| (ks.id, ks.index)).collect()
 	}
 
 	/// Complete key servers set initialization.

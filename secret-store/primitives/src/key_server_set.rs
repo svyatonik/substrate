@@ -39,5 +39,8 @@ sp_api::decl_runtime_apis! {
 	pub trait SecretStoreKeyServerSetApi {
 		/// Get server set state.
 		fn snapshot(key_server: KeyServerId) -> KeyServerSetSnapshot;
+	
+		/// Get current key servers with indices.
+		fn current_set_with_indices() -> Vec<(KeyServerId, u8)>;
 	}
 }

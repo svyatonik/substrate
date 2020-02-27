@@ -367,6 +367,11 @@ impl<T: Trait> Module<T> {
 		key_server_set::<T>().snapshot(key_server)
 	}
 
+	/// Get current key servers with indices.
+	pub fn key_server_set_with_indices() -> Vec<(KeyServerId, u8)> {
+		key_server_set::<T>().current_set_with_indices()
+	}
+
 	///
 	pub fn server_key_generation_tasks(begin: u32, end: u32) -> Vec<ss_primitives::service::ServiceTask> {
 		ServerKeyGenerationRequestsKeys::get()
