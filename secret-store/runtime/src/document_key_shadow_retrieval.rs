@@ -19,11 +19,10 @@
 
 use codec::{Encode, Decode};
 use frame_support::{StorageValue, StorageMap, StorageDoubleMap, ensure};
-use ss_primitives::{EntityId, ServerKeyId, KeyServerId};
+use ss_primitives::{EntityId, ServerKeyId, KeyServerId, KeyServersMask};
 use sp_std::vec::Vec;
 use frame_system::ensure_signed;
 use crate::service::{Responses, ResponseSupport, SecretStoreService};
-use crate::utils::KeyServersMask;
 use super::{
 	Trait, Module, Event,
 	DocumentKeyShadowRetrievalFee,

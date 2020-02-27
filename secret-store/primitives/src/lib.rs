@@ -1,8 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod key_servers_mask;
+
 pub mod acl_storage;
 pub mod key_server_set;
 pub mod service;
+
+pub use key_servers_mask::KeyServersMask;
 
 /// Server key id.
 pub type ServerKeyId = sp_core::H256;

@@ -12,7 +12,6 @@ mod mock;
 mod server_key_generation;
 mod server_key_retrieval;
 mod service;
-mod utils;
 
 use frame_support::{StorageMap, traits::Currency, decl_module, decl_event, decl_storage, ensure};
 use frame_system::{self as system, ensure_signed};
@@ -20,6 +19,7 @@ use ss_primitives::{
 	EntityId,
 	KeyServerId,
 	ServerKeyId,
+	KeyServersMask,
 	key_server_set::{KeyServerSetSnapshot, KeyServerNetworkAddress, MigrationId as MigrationIdT},
 };
 use document_key_shadow_retrieval::{
@@ -31,7 +31,6 @@ use document_key_storing::{DocumentKeyStoreRequest, DocumentKeyStoreService};
 use server_key_generation::{ServerKeyGenerationRequest, ServerKeyGenerationService};
 use server_key_retrieval::{ServerKeyRetrievalRequest, ServerKeyRetrievalService};
 use key_server_set_storage::KeyServer;
-use utils::KeyServersMask;
 
 /*
 

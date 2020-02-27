@@ -18,7 +18,7 @@
 
 use frame_system::ensure_signed;
 use frame_support::{traits::{Currency, ExistenceRequirement}, StorageValue, StorageMap, StorageDoubleMap, StorageLinkedMap};
-use ss_primitives::KeyServerId;
+use ss_primitives::{KeyServerId, KeyServersMask};
 use sp_std::vec::Vec;
 use super::{
 	BalanceOf,
@@ -27,7 +27,6 @@ use super::{
 	CurrentKeyServers, CurrentSetChangeBlock,
 };
 use codec::{/*Codec, */Decode, Encode, EncodeLike};
-use crate::utils::KeyServersMask;
 
 /*/// Map of request key => request details.
 pub struct RequestDetails<RequestKey, Request, List, Map>(std::marker::PhantomData<(RequestKey, Request, List, Map)>);

@@ -22,14 +22,13 @@ use sp_std::{
 	marker::PhantomData,
 	vec::Vec,
 };
-use ss_primitives::{KeyServerId, key_server_set::{MigrationId as MigrationIdT, KeyServerNetworkAddress}};
+use ss_primitives::{KeyServerId, KeyServersMask, key_server_set::{MigrationId as MigrationIdT, KeyServerNetworkAddress}};
 use crate::{
 	Trait,
 	Owner, IsInitialized,
 	MigrationId, MigrationConfirmations, CurrentSetChangeBlock,
 	CurrentKeyServers, MigrationKeyServers, NewKeyServers,
 };
-use crate::utils::KeyServersMask;
 
 /// Single key server data.
 #[derive(Encode, Decode, PartialEq)]
